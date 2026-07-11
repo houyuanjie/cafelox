@@ -1,0 +1,19 @@
+//| mill-version: 1.1.7
+package build
+
+import mill.*
+import mill.scalalib.*
+
+trait AnyScalaModule extends ScalaModule:
+  override def scalaVersion  = Task("3.8.2")
+  override def scalacOptions = Seq(
+    "--feature",
+    "--deprecation",
+    "-Wunused:imports,implicits",
+    "-Yexplicit-nulls"
+  )
+
+  object test extends ScalaTests with TestModule.Munit:
+    override def munitVersion = Task("1.3.4")
+
+object cafelox extends AnyScalaModule
