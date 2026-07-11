@@ -9,7 +9,9 @@ trait AnyScalaModule extends ScalaModule:
   override def scalacOptions = Seq(
     "--feature",
     "--deprecation",
+    "-explain",
     "-Wunused:imports,implicits",
+    "-Wvalue-discard",
     "-Yexplicit-nulls"
   )
 
