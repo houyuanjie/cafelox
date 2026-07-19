@@ -4,18 +4,40 @@ package build
 import mill.*
 import mill.scalalib.*
 
-trait AnyScalaModule extends ScalaModule:
-  override def scalaVersion  = Task("3.8.2")
-  override def scalacOptions = Seq(
-    "--feature",
-    "--deprecation",
+object CommonConfiguration:
+  val jvmVersion           = "zulu:25"
+  val scalaVersion         = "3.8.2"
+  val scalaCompilerOptions = Seq(
+    // format: off
+    "-encoding", "UTF-8",
+    "-release", "25",
     "-explain",
-    "-Wunused:imports,implicits",
+    "-explain-types",
+    "-feature",
+    "-deprecation",
+    "-unchecked",
+    "-Wsafe-init",
+    "-Wunused:all",
     "-Wvalue-discard",
-    "-Yexplicit-nulls"
+    "-Yexplicit-nulls",
+    // format: on
   )
 
-  object test extends ScalaTests with TestModule.Munit:
-    override def munitVersion = Task("1.3.4")
+  object DependenceVersion:
+    val munit = "1.3.4"
 
-object cafelox extends AnyScalaModule
+trait AnyScalaModule extends ScalaModule:
+  override def jvmVersion    = Task(CommonConfiguration.jvmVersion)
+  override def scalaVersion  = Task(CommonConfiguration.scalaVersion)
+  override def scalacOptions = Task(CommonConfiguration.scalaCompilerOptions)
+
+  object test extends ScalaTests with TestModule.Munit:
+    override def munitVersion = Task(CommonConfiguration.DependenceVersion.munit)
+
+object runtime extends AnyScalaModule
+
+object compiler extends AnyScalaModule:
+  override def moduleDeps = Seq(runtime)
+
+object cli extends AnyScalaModule:
+  override def moduleDeps = Seq(compiler)
