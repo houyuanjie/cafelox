@@ -36,7 +36,7 @@ class ScannerSuite extends FunSuite:
     assertEquals(lexemes, expectedLexemes)
 
   private inline def pos(line: Int, col: Int, offset: Int): Position =
-    Position(None, line, col, offset)
+    Position(line, col, offset)
 
   // ==============================
   //           单字符Token

@@ -28,7 +28,7 @@ final class Scanner(val source: String, val path: Option[Path] = None):
   /** 分词 */
   def tokenize(): Either[ScannerError, Seq[Token]] =
     // 指针归零
-    start = Position(path, 1, 1, 0)
+    start = Position(1, 1, 0, path)
     current = start
     // 清空上次的收集结果
     tokens.clear()
