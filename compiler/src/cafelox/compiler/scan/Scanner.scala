@@ -126,8 +126,8 @@ final class Scanner(val source: String, val path: Option[Path] = None):
     if nextOffset >= source.length then None
     else Some((source.charAt(current.offset), source.charAt(nextOffset)))
 
-  /** 推动当前指针移动到下一个字符，返回移动前的位置 */
-  private def pushCurrent(): Option[Position] =
+  /** 推动当前指针移动到下一个字符，返回移动前的字符 */
+  private def advance(): Option[Char] =
     if isAtEnd then None
     else
       val before = current
@@ -135,14 +135,8 @@ final class Scanner(val source: String, val path: Option[Path] = None):
       current = source.charAt(current.offset) match
         case '\n' => current.copy(line = current.line + 1, col = 1, offset = current.offset + 1)
         case _    => current.copy(col = current.col + 1, offset = current.offset + 1)
-      // 返回更新前的指针
-      Some(before)
-
-  /** 推动当前指针移动到下一个字符，返回移动前的字符 */
-  private def advance(): Option[Char] =
-    pushCurrent() match
-      case Some(before) => Some(source.charAt(before.offset))
-      case None         => None
+      // 返回移动前的字符
+      Some(source.charAt(before.offset))
 
   /** 如果当前字符等于 `c`， 则移动当前指针到下一个字符并返回 `true`， 否则不动并返回 `false` */
   private def matchChar(c: Char): Boolean =
