@@ -19,14 +19,14 @@ final class Scanner(val source: String, val path: Option[Path] = None):
   private var current: Position = uninitialized
 
   /** 收集分词结果 */
-  private val tokens = Seq.newBuilder[Token]
+  private val tokens = IndexedSeq.newBuilder[Token]
 
   // ==============================
   //           顶层
   // ==============================
 
   /** 分词 */
-  def tokenize(): Either[ScannerError, Seq[Token]] =
+  def tokenize(): Either[ScannerError, IndexedSeq[Token]] =
     // 指针归零
     start = Position(1, 1, 0, path)
     current = start
