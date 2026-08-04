@@ -44,7 +44,7 @@ trait AnyScalaModule extends ScalaModule with ScalafmtModule with ScoverageModul
   override def scoverageVersion = Task(CommonConfiguration.DependencyVersion.scoverage)
 
   /** 测试并报告覆盖率，返回报告数据文件夹 */
-  def testCo(args: String*): Task.Command[os.Path] = Task.Command:
+  def testCo(args: String*): Task.Command[PathRef] = Task.Command:
     // 执行默认测试任务
     assert(test.defaultTask() == "testForked")
     test.testForked(args*).apply()
@@ -53,13 +53,14 @@ trait AnyScalaModule extends ScalaModule with ScalafmtModule with ScoverageModul
     // 获取报告文件
     val dataDir = this.scoverage.data().path
     assert(os.isDir(dataDir))
-    val htmlReportDir = dataDir / ".." / "htmlReport.dest"
+    val htmlReportDir = dataDir / os.up / "htmlReport.dest"
     assert(os.isDir(htmlReportDir))
     val indexHtml = htmlReportDir / "index.html"
     assert(os.isFile(indexHtml))
     // 如果支持，使用浏览器打开
     if Desktop.isDesktopSupported then Desktop.getDesktop.browse(indexHtml.toURI)
-    dataDir
+    // 返回报告数据
+    PathRef(dataDir)
 
   object test extends ScoverageTests with TestModule.Munit:
     override def munitVersion = Task(CommonConfiguration.DependencyVersion.munit)
