@@ -2,7 +2,10 @@
 //| mill-version: 1.1.7
 //| mvnDeps:
 //| - com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION
+//| - com.goyeau::mill-scalafix::0.6.2
 package build
+
+import com.goyeau.mill.scalafix.ScalafixModule
 
 import mill.*
 import mill.api.*
@@ -37,7 +40,7 @@ object CommonConfiguration:
     val scoverage = "2.5.2"
 
 /** Scala模块基础 */
-trait AnyScalaModule extends ScalaModule with ScalafmtModule with ScoverageModule:
+trait AnyScalaModule extends ScalaModule with ScalafmtModule with ScoverageModule with ScalafixModule:
   override def jvmVersion       = Task(CommonConfiguration.jvmVersion)
   override def scalaVersion     = Task(CommonConfiguration.scalaVersion)
   override def scalacOptions    = Task(CommonConfiguration.scalaCompilerOptions)

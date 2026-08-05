@@ -1,6 +1,7 @@
 package cafelox.compiler.scan
 
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
+import java.nio.file.Path
 import scala.compiletime.uninitialized
 import scala.util.boundary
 import scala.util.boundary.break
