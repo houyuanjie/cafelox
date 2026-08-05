@@ -46,6 +46,13 @@ trait AnyScalaModule extends ScalaModule with ScalafmtModule with ScoverageModul
   override def scalacOptions    = Task(CommonConfiguration.scalaCompilerOptions)
   override def scoverageVersion = Task(CommonConfiguration.DependencyVersion.scoverage)
 
+  /** 清洁并格式化代码 */
+  def lintFmt(args: String*): Task.Command[Unit] = Task.Command:
+    // 执行Scalafix
+    this.fix(args*).apply()
+    // 执行Scalafmt
+    this.reformat().apply()
+
   /** 测试并报告覆盖率，返回报告数据文件夹 */
   def testCo(args: String*): Task.Command[PathRef] = Task.Command:
     // 执行默认测试任务
