@@ -18,7 +18,7 @@ import java.awt.Desktop
 /** 公共配置 */
 object CommonConfiguration:
   val jvmVersion           = "zulu:25"
-  val scalaVersion         = "3.8.2"
+  val scalaVersion         = "3.8.4"
   val scalaCompilerOptions = Seq(
     // format: off
     "-encoding", "UTF-8",
