@@ -26,7 +26,7 @@ object Node:
     case Block(statements: Statements[Stmt], loc: Location)
 
     /** 类 */
-    case Class(name: Token, superClass: Expr.Variable, methods: Statements[Function], loc: Location)
+    case Class(name: Token, superClass: Option[Expr.Variable], methods: Statements[Function], loc: Location)
 
     /** 表达式语句 */
     case Expression(expr: Expr, loc: Location)
@@ -35,7 +35,7 @@ object Node:
     case Function(name: Token, params: Seq[Token], body: Statements[Stmt], loc: Location)
 
     /** 分支语句 */
-    case If(condition: Expr, thenBranch: Stmt, elseBranch: Stmt, loc: Location)
+    case If(condition: Expr, thenBranch: Stmt, elseBranch: Option[Stmt], loc: Location)
 
     /** print语句 */
     case Print(expression: Expr, loc: Location)
@@ -44,10 +44,10 @@ object Node:
     case Puts(expression: Expr, loc: Location)
 
     /** 返回语句 */
-    case Return(keyword: Token, value: Expr, loc: Location)
+    case Return(keyword: Token, value: Option[Expr], loc: Location)
 
     /** 变量声明 */
-    case Variable(name: Token, initializer: Expr, loc: Location)
+    case Variable(name: Token, initializer: Option[Expr], loc: Location)
 
     /** 循环语句 */
     case While(condition: Expr, body: Stmt, loc: Location)
@@ -68,6 +68,15 @@ object Node:
 
     /** 分组 */
     case Grouping(expression: Expr, loc: Location)
+
+    /** 布尔真值字面量 */
+    case TrueLiteral(loc: Location)
+
+    /** 布尔假值字面量 */
+    case FalseLiteral(loc: Location)
+
+    /** 空值字面量 */
+    case NilLiteral(loc: Location)
 
     /** 数字字面量 */
     case NumberLiteral(value: Double, loc: Location)
