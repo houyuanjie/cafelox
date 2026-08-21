@@ -32,7 +32,7 @@ object Node:
     case Expression(expr: Expr, loc: Location)
 
     /** 函数 */
-    case Function(name: Token, params: Seq[Token], body: Statements[Stmt], loc: Location)
+    case Function(name: Token, params: Seq[Token], body: Block, loc: Location)
 
     /** 分支语句 */
     case If(condition: Expr, thenBranch: Stmt, elseBranch: Option[Stmt], loc: Location)
