@@ -132,7 +132,7 @@ final class Scanner(val source: String, val path: Option[Path] = None):
     if isAtEnd then None
     else
       val before = current
-      // 根据当前字符更新 current 指针
+      // 根据当前字符更新current指针
       current = source.charAt(current.offset) match
         case '\n' => current.copy(line = current.line + 1, col = 1, offset = current.offset + 1)
         case _    => current.copy(col = current.col + 1, offset = current.offset + 1)
