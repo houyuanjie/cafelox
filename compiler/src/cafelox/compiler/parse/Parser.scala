@@ -50,7 +50,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
         errors += ParserError("Parser stopped before reaching the end of the token stream.", peek())
       // 最终失败路径：errors不为空
       val errs = errors.result()
-      if !errs.isEmpty then return Left(errs)
+      if errs.nonEmpty then return Left(errs)
 
       // 包装解析结果
       val (firstToken, eof) = (tokens.head, tokens.last)
