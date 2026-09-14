@@ -18,10 +18,8 @@ Cafelox基本与Lox相同，在Lox的基础上又吸收了一些来自Java、Rub
 
 
 【开发】
-* ./mill compiler.compile    # 编译compiler模块
-* ./mill cli.test            # 对cli模块进行单元测试
-* ./mill runtime.testCo      # 对runtime模块进行单元测试和Scoverage
-* ./mill __.lintFmt          # 对所有模块执行Scalafix和Scalafmt
+* sbt test        # 执行单元测试
+* make lintFmt    # 对所有模块执行Scalafix和Scalafmt
 
 
 【规范】
@@ -30,7 +28,7 @@ Cafelox基本与Lox相同，在Lox的基础上又吸收了一些来自Java、Rub
 * 中文和English之间不加空格
 * 不使用中文句号
 * 提交消息使用简短的简体中文，范例：
-  | Build：重构代码风格，遵守Mill惯用法
+  | 重构：构建系统迁移，Mill -> SBT
   | 
-  | 1. 使用os.up代替..；
-  | 2. 重构testCo返回类型为PathRef
+  | 1. 移除Scoverage；
+  | 2. 使用SBT项目结构
