@@ -21,7 +21,7 @@ scalacOptions ++= Seq(
     // format: on
   )
 
-lazy val root = rootProject.autoAggregate
+lazy val cafelox = rootProject.autoAggregate
   .settings(
     publish / skip := true
   )
