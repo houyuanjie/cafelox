@@ -18,8 +18,9 @@ Cafelox基本与Lox相同，在Lox的基础上又吸收了一些来自Java、Rub
 
 
 【开发】
-* sbt test        # 执行单元测试
-* make lintFmt    # 对所有模块执行Scalafix和Scalafmt
+* sbt test    # 执行单元测试
+* sbt co      # 测量单元测试覆盖率
+* sbt fix     # 对所有模块执行Scalafix和Scalafmt
 
 
 【规范】
@@ -28,7 +29,7 @@ Cafelox基本与Lox相同，在Lox的基础上又吸收了一些来自Java、Rub
 * 中文和English之间不加空格
 * 不使用中文句号
 * 提交消息使用简短的简体中文，范例：
-  | 重构：构建系统迁移，Mill -> SBT
+  | 构建：添加'sbt co'、'sbt fix'命令
   | 
-  | 1. 移除Scoverage；
-  | 2. 使用SBT项目结构
+  | 1. 添加Scoverage插件；
+  | 2. 移除'make lintFmt'

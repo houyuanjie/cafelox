@@ -1,9 +1,8 @@
-.PHONY: all reset lintFmt
+.PHONY: all reset
 
 all:
-	@echo "all     - Print this message"
-	@echo "reset   - Remove all SBT/Metals/Bloop/BSP generated files"
-	@echo "lintFmt - Apply Scalafix & Scalafmt on each project"
+	@echo "all   - Print this message"
+	@echo "reset - Remove all SBT/Metals/Bloop/BSP generated files"
 
 reset:
 	sbt shutdown
@@ -15,6 +14,3 @@ reset:
 	$(RM) -r project/target/
 	$(RM)    project/metals.sbt
 	$(RM) -r target/
-
-lintFmt:
-	sbt "scalafixAll;scalafmtAll"
