@@ -1,6 +1,4 @@
 *.scala text eol=lf
-*.mill text eol=lf
+*.sbt text eol=lf
 
 *.conf text eol=lf
-
-*.bat text eol=crlf

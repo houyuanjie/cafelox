@@ -1,9 +1,10 @@
-.codex/
-
 .idea/
 .vscode/
 .metals/
 .bsp/
 .bloop/
 
-out/
+target/
+project/project/
+project/target/
+project/metals.sbt
