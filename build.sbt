@@ -10,7 +10,6 @@ scalacOptions ++= Seq(
     "-encoding", "UTF-8",
     "-release", "25",
     "-explain",
-    "-explain-types",
     "-feature",
     "-deprecation",
     "-unchecked",
