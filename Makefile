@@ -1,7 +1,9 @@
-.PHONY: all reset
+.PHONY: all help reset
 
-all:
-	@echo "all   - Print this message"
+all: help
+
+help:
+	@echo "help   - Print this message"
 	@echo "reset - Remove all SBT/Metals/Bloop/BSP generated files"
 
 reset:
