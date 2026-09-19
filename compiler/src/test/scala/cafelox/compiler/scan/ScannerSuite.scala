@@ -163,7 +163,7 @@ class ScannerSuite extends FunSuite:
     assertTokenTypes(source, expected)
 
   test("多行字符串"):
-    // 使用显式 '\n' 构造多行字符串
+    // 使用显式'\n'构造多行字符串
     val source   = "\"line1\nline2\""
     val expected = Seq(TokenType.StringLiteral("line1\nline2"), TokenType.EOF)
     assertTokenTypes(source, expected)
@@ -206,13 +206,13 @@ class ScannerSuite extends FunSuite:
     assertTokenTypes(source, expected)
 
   test("小数点前无数字"):
-    // .5 应该解析为 Dot + NumberLiteral(5)
+    // .5应该解析为Dot + NumberLiteral(5)
     val source   = ".5"
     val expected = Seq(TokenType.Dot, TokenType.NumberLiteral(5.0), TokenType.EOF)
     assertTokenTypes(source, expected)
 
   test("小数点后无数字"):
-    // 5. 应该只解析为 NumberLiteral(5.0)，因为 peek2 要求小数点后必须是数字
+    // 5.应该只解析为NumberLiteral(5.0)，因为peek2要求小数点后必须是数字
     val source          = "5."
     val expectedTypes   = Seq(TokenType.NumberLiteral(5.0), TokenType.Dot, TokenType.EOF)
     val expectedLexemes = Seq("5", ".", "")
@@ -351,7 +351,7 @@ class ScannerSuite extends FunSuite:
     assertTokenTypes(source, expected)
 
   test("关键字作为前缀"):
-    // "andfoo" 不是关键字，应该是标识符
+    // "andfoo"不是关键字，应该是标识符
     val source          = "andfoo"
     val expectedTypes   = Seq(TokenType.Identifier, TokenType.EOF)
     val expectedLexemes = Seq("andfoo", "")
@@ -389,7 +389,7 @@ class ScannerSuite extends FunSuite:
     val tokens = assertSuccess(source)
     assertEquals(tokens.size, 3)
     assertEquals(tokens(0).pos, pos(1, 1, 0))
-    // \r 被消费后 col=2, \n 再消费后 line=2, col=1
+    // \r被消费后 col=2, \n再消费后 line=2, col=1
     assertEquals(tokens(1).pos, pos(2, 1, 3))
 
   test("多个空白"):
@@ -632,7 +632,7 @@ class ScannerSuite extends FunSuite:
     assertTokenTypes(source, expected)
 
   test("数字后接标识符"):
-    // 123 是数字，abc 是标识符
+    // 123是数字，abc是标识符
     val source   = "123abc"
     val expected = Seq(TokenType.NumberLiteral(123.0), TokenType.Identifier, TokenType.EOF)
     assertTokenTypes(source, expected)

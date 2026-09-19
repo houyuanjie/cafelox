@@ -77,7 +77,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
   // 声明
 
-  /** 解析声明结构：类、函数、变量； 下层：语句 */
+  /** 解析声明结构：类、函数、变量；下层：语句 */
   private def declaration(): Option[Node.Stmt] =
     try
       if matchType(TokenType.Class) then Some(classDeclaration())
