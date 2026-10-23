@@ -3,7 +3,7 @@
 all: help
 
 help:
-	@echo "help   - Print this message"
+	@echo "help  - Print this message"
 	@echo "reset - Remove all SBT/Metals/Bloop/BSP generated files"
 
 reset:
