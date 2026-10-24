@@ -531,13 +531,9 @@ final class Parser(val tokens: IndexedSeq[Token]):
       case _ => error("Invalid primary expression.")
 
     // 链式后缀解析（支持 .prop、(args)、链式组合）
-    var result = baseExpr
-    boundary:
-      while true do
-        if check(TokenType.Dot) then result = parseGetExpression(result)
-        else if check(TokenType.LeftParen) then result = parseCallExpression(result)
-        else break()
-    result
+    if check(TokenType.Dot) then parseGetExpression(baseExpr)
+    else if check(TokenType.LeftParen) then parseCallExpression(baseExpr)
+    else baseExpr
 
   /** 解析方法调用 */
   @tailrec
