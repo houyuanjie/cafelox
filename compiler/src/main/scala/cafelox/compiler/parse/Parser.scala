@@ -4,6 +4,7 @@ import cafelox.compiler.scan.Position
 import cafelox.compiler.scan.Token
 import cafelox.compiler.scan.TokenType
 
+import scala.annotation.tailrec
 import scala.compiletime.uninitialized
 import scala.util.boundary
 import scala.util.boundary.break
@@ -103,7 +104,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
     val startOfBody = consume(TokenType.LeftBrace, "Expect '{' before class body.")
     val methods     = Seq.newBuilder[Node.Stmt.Function]
-    while !check(TokenType.RightBrace) do methods += functionDeclaration("method")
+    while !check(TokenType.RightBrace) && !isAtEnd do methods += functionDeclaration("method")
     consume(TokenType.RightBrace, "Expect '}' after class body.")
 
     Node.Stmt.Class(
@@ -118,7 +119,8 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
   /** 解析函数或方法声明 */
   private def functionDeclaration(kind: "function" | "method"): Node.Stmt.Function =
-    val startOfFun = previous() // 'fun'
+    // function从'fun'开始，method从方法名开始
+    val startOfFun = if kind == "function" then previous() else peek()
 
     val name = consume(TokenType.Identifier, s"Expect $kind name.")
 
@@ -126,14 +128,17 @@ final class Parser(val tokens: IndexedSeq[Token]):
     val parameters      = Seq.newBuilder[Token]
     var parametersCount = 0
     boundary:
-      while !check(TokenType.RightParen) do
+      while !check(TokenType.RightParen) && !isAtEnd do
         if parametersCount >= 255 then error("Can't have more than 255 parameters.")
         parameters += consume(TokenType.Identifier, "Expect parameter name.")
         parametersCount += 1
         // 每个参数之后跟一个逗号
         if !matchType(TokenType.Comma) then break()
-        // 但最后一个参数之后不接受尾随逗号
-        if check(TokenType.RightParen) then error("Don't trail a comma.")
+
+    // 不能尾随逗号
+    if previous().tokenType == TokenType.Comma then error("Don't trail a comma.")
+
+    // 消耗')'
     consume(TokenType.RightParen, "Expect ')' after parameters.")
 
     consume(TokenType.LeftBrace, s"Expect '{' before $kind body.")
@@ -315,7 +320,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
     val startOfBlock = previous() // '{'
 
     val stmts = Seq.newBuilder[Node.Stmt]
-    while !check(TokenType.RightBrace) do declaration().foreach(stmts += _)
+    while !check(TokenType.RightBrace) && !isAtEnd do declaration().foreach(stmts += _)
 
     consume(TokenType.RightBrace, "Expect '}' after block.")
 
@@ -343,29 +348,279 @@ final class Parser(val tokens: IndexedSeq[Token]):
   //           表达式
   // ==============================
 
-  private def expression(): Node.Expr = ???
+  // Pratt解析算法
 
-  // TODO
+  private def expression(rightBindingPower: Int = lowestBindingPower): Node.Expr =
+    // 一个表达式只能由一个前缀的或主要的子表达式开始
+    var expr = parsePrefixExpression()
+
+    // 尝试向后解析中缀部分，追加到构造的表达式中
+    boundary:
+      while true do
+        val part = peek()
+
+        // 若向后看不到一个中缀符号，则结束追加
+        if !isInfixOperator(part.tokenType) then break()
+        val bp = infixOperatorBindingPowers(part.tokenType)
+        // 若后一个中缀符号的绑定力不足，则结束追加
+        if bp.left < rightBindingPower then break()
+
+        // 追加右边部分，构造更大的表达式
+        expr = parseInfixExpression(expr)
+
+    expr
+
+  /** 解析前缀符号（nud - null denotation） */
+  private def parsePrefixExpression(): Node.Expr =
+    val startOfExpr = peek() // 可能是前缀符号，需要判断
+
+    if isPrefixOperator(startOfExpr.tokenType) then
+      val op    = advance()
+      val right = expression(prefixOperatorBindingPowers(op.tokenType))
+
+      Node.Expr.Unary(
+        op,
+        right,
+        Location(startOfExpr.pos, peek().pos)
+      )
+    else parsePrimaryExpression()
+
+  /** 解析中缀符号（led - left denotation） */
+  private def parseInfixExpression(left: Node.Expr): Node.Expr =
+    val op = advance() // 中缀符号
+
+    val bp    = infixOperatorBindingPowers(op.tokenType)
+    val right = expression(bp.right)
+
+    op.tokenType match
+      // 语法结构：赋值表达式
+      case TokenType.Equal =>
+        left match
+          // ‘foo = 123’
+          case Node.Expr.Variable(name, _) =>
+            Node.Expr.Assign(
+              name,
+              right,
+              Location(left.loc.startIncluded, peek().pos)
+            )
+
+          // 'foo.bar = 123'
+          case Node.Expr.Get(obj, name, _) =>
+            Node.Expr.Set(
+              obj,
+              name,
+              right,
+              Location(left.loc.startIncluded, peek().pos)
+            )
+
+          // 其它形式
+          case _ =>
+            error("Invalid assignment target.")
+
+      // 逻辑运算
+      case TokenType.And | TokenType.Or =>
+        Node.Expr.Logical(
+          left,
+          op,
+          right,
+          Location(left.loc.startIncluded, peek().pos)
+        )
+
+      // 算术运算
+      case TokenType.EqualEqual | TokenType.BangEqual | TokenType.Less | TokenType.Greater | TokenType.LessEqual |
+          TokenType.GreaterEqual | TokenType.Plus | TokenType.Minus | TokenType.Star | TokenType.Slash =>
+        Node.Expr.Binary(
+          left,
+          op,
+          right,
+          Location(left.loc.startIncluded, peek().pos)
+        )
+
+      case _ =>
+        error("Invalid infix expression.")
+
+  /** 解析首要表达式 */
+  private def parsePrimaryExpression(): Node.Expr =
+    val startOfPrimary = peek() // 首要表达式
+
+    val baseExpr = startOfPrimary.tokenType match
+      // 数值字面量
+      case TokenType.NumberLiteral(value) =>
+        advance()
+
+        Node.Expr.NumberLiteral(
+          value,
+          Location(startOfPrimary.pos, peek().pos)
+        )
+
+      // 字符串字面量
+      case TokenType.StringLiteral(value) =>
+        advance()
+
+        Node.Expr.StringLiteral(
+          value,
+          Location(startOfPrimary.pos, peek().pos)
+        )
+
+      // 'true'
+      case TokenType.True =>
+        advance()
+
+        Node.Expr.TrueLiteral(
+          Location(startOfPrimary.pos, peek().pos)
+        )
+
+      // 'false'
+      case TokenType.False =>
+        advance()
+
+        Node.Expr.FalseLiteral(
+          Location(startOfPrimary.pos, peek().pos)
+        )
+
+      // 'nil'
+      case TokenType.Nil =>
+        advance()
+
+        Node.Expr.NilLiteral(
+          Location(startOfPrimary.pos, peek().pos)
+        )
+
+      // 标识符
+      case TokenType.Identifier =>
+        val name = advance()
+
+        Node.Expr.Variable(
+          name,
+          Location(name.pos, peek().pos)
+        )
+
+      // 'this'
+      case TokenType.This =>
+        val `this` = advance()
+
+        Node.Expr.This(
+          `this`,
+          Location(`this`.pos, peek().pos)
+        )
+
+      // 'super'
+      case TokenType.Super =>
+        val `super` = advance()
+        consume(TokenType.Dot, "Expect '.' after 'super'.")
+        val methodName = consume(TokenType.Identifier, "Expect superclass method name.")
+
+        Node.Expr.Super(
+          `super`,
+          methodName,
+          Location(`super`.pos, peek().pos)
+        )
+
+      // '('
+      case TokenType.LeftParen =>
+        advance() // '('
+        val expr = expression()
+        consume(TokenType.RightParen, "Expect ')' after expression.")
+
+        Node.Expr.Grouping(
+          expr,
+          Location(startOfPrimary.pos, peek().pos)
+        )
+
+      // 其它情况
+      case _ => error("Invalid primary expression.")
+
+    // 链式后缀解析（支持 .prop、(args)、链式组合）
+    var result = baseExpr
+    boundary:
+      while true do
+        if check(TokenType.Dot) then result = parseGetExpression(result)
+        else if check(TokenType.LeftParen) then result = parseCallExpression(result)
+        else break()
+    result
+
+  /** 解析方法调用 */
+  @tailrec
+  private def parseCallExpression(callee: Node.Expr): Node.Expr =
+    val leftParen = advance() // '('
+
+    // 收集参数列表
+    val args      = Seq.newBuilder[Node.Expr]
+    var argsCount = 0
+    boundary:
+      while !check(TokenType.RightParen) && !isAtEnd do
+        if argsCount >= 255 then error("Can't have more than 255 arguments.")
+        args += expression()
+        argsCount += 1
+        // 每个参数之后跟一个逗号
+        if !matchType(TokenType.Comma) then break()
+
+    // 不能尾随逗号
+    if previous().tokenType == TokenType.Comma then error("Don't trail a comma.")
+
+    // 消耗')'
+    val rightParen = consume(TokenType.RightParen, "Expect ')' after arguments.")
+
+    val call =
+      Node.Expr.Call(
+        callee,
+        leftParen,
+        Node.Expressions(
+          args.result(),
+          Location(leftParen.pos, rightParen.pos)
+        ),
+        Location(callee.loc.startIncluded, peek().pos)
+      )
+
+    if check(TokenType.LeftParen) then parseCallExpression(call) // 'foo(1,2,3)(4,5,6)'
+    else if check(TokenType.Dot) then parseGetExpression(call)   // 'foo(1,2,3).bar'
+    else call
+
+  /** 解析属性访问 */
+  @tailrec
+  private def parseGetExpression(obj: Node.Expr): Node.Expr =
+    advance() // '.'
+
+    val name = consume(TokenType.Identifier, "Expect property name after '.'.")
+
+    val get =
+      Node.Expr.Get(
+        obj,
+        name,
+        Location(obj.loc.startIncluded, peek().pos)
+      )
+
+    if check(TokenType.LeftParen) then parseCallExpression(get) // 'foo.bar(1,2,3)'
+    else if check(TokenType.Dot) then parseGetExpression(get)   // 'foo.bar.baz'
+    else get
+
+  /** 判断是否前缀符号 */
+  private def isPrefixOperator(tt: TokenType): Boolean =
+    prefixOperatorBindingPowers.contains(tt)
+
+  /** 判断是否中缀符号 */
+  private def isInfixOperator(tt: TokenType): Boolean =
+    infixOperatorBindingPowers.contains(tt)
 
   // ==============================
   //           原语
   // ==============================
 
   /** 查看当前Token，不消费 */
-  private inline def peek(): Token =
+  private def peek(): Token =
     tokens(current)
 
   /** 查看前一个Token，不消费 */
-  private inline def previous(): Token =
+  private def previous(): Token =
     // 调用previous()之前必须先成功消费过Token：advance()/consume()/matchType()
     tokens(current - 1)
 
   /** 判断当前是否已经到达末尾 */
-  private inline def isAtEnd: Boolean =
+  private def isAtEnd: Boolean =
     peek().tokenType == TokenType.EOF
 
   /** 报错 */
-  private inline def error(msg: String): Nothing =
+  private def error(msg: String): Nothing =
     throw ParserError(msg, peek())
 
   /** 推动当前指针移动到下一个Token，返回移动前的Token */
@@ -415,4 +670,62 @@ object Parser:
     TokenType.Print,
     TokenType.Puts,
     TokenType.Return
+  )
+
+  /** 最低绑定力 */
+  private val lowestBindingPower: Int = 0
+
+  /** 前缀（一元）符号的绑定力 */
+  private val prefixOperatorBindingPowers: Map[TokenType, Int] = Map(
+    // 逻辑运算
+
+    /* 逻辑取反操作符 */
+    TokenType.Bang -> 25,
+
+    // 算术运算
+
+    /* 取相反数操作符 */
+    TokenType.Minus -> 25
+  )
+
+  /** 左右绑定力 */
+  final case class InfixOperatorBindingPower(left: Int, right: Int)
+
+  /** 中缀（二元）符号的左右绑定力 */
+  private val infixOperatorBindingPowers: Map[TokenType, InfixOperatorBindingPower] = Map(
+    // 语法结构
+
+    /* 赋值表达式 */
+    TokenType.Equal -> InfixOperatorBindingPower(1, 1),
+
+    // 逻辑运算
+
+    /* 短路或 */
+    TokenType.Or -> InfixOperatorBindingPower(2, 3),
+    /* 短路与 */
+    TokenType.And -> InfixOperatorBindingPower(3, 4),
+
+    // 二元算术
+
+    /* 判断相等 */
+    TokenType.EqualEqual -> InfixOperatorBindingPower(5, 6),
+    /* 判断不相等 */
+    TokenType.BangEqual -> InfixOperatorBindingPower(5, 6),
+    /* 判断小于 */
+    TokenType.Less -> InfixOperatorBindingPower(7, 8),
+    /* 判断大于 */
+    TokenType.Greater -> InfixOperatorBindingPower(7, 8),
+    /* 判断小于等于 */
+    TokenType.LessEqual -> InfixOperatorBindingPower(7, 8),
+    /* 判断大于等于 */
+    TokenType.GreaterEqual -> InfixOperatorBindingPower(7, 8),
+
+    /* 加法操作符 */
+    TokenType.Plus -> InfixOperatorBindingPower(10, 11),
+    /* 减法操作符 */
+    TokenType.Minus -> InfixOperatorBindingPower(10, 11),
+    /* 乘法操作符 */
+    TokenType.Star -> InfixOperatorBindingPower(20, 21),
+    /* 除法操作符 */
+    TokenType.Slash -> InfixOperatorBindingPower(20, 21)
   )
