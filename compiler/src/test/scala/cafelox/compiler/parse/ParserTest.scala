@@ -3,7 +3,7 @@ package cafelox.compiler.parse
 import cafelox.compiler.scan.Scanner
 import munit.FunSuite
 
-class ParserSuite extends FunSuite:
+class ParserTest extends FunSuite:
 
   // ==============================
   //           辅助

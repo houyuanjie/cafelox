@@ -2,7 +2,7 @@ package cafelox.compiler.scan
 
 import munit.FunSuite
 
-class ScannerSuite extends FunSuite:
+class ScannerTest extends FunSuite:
 
   // ==============================
   //           辅助
