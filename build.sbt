@@ -33,7 +33,8 @@ lazy val runtime = (project in file("runtime"))
 lazy val compiler = (project in file("compiler"))
   .dependsOn(runtime)
   .settings(
-    name := "compiler"
+    name := "compiler",
+    libraryDependencies += Dependencies.pprint
   )
 
 lazy val cli = (project in file("cli"))
