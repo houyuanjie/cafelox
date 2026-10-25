@@ -2,7 +2,6 @@ package cafelox.compiler.scan
 
 import java.nio.file.Files
 import java.nio.file.Path
-import scala.compiletime.uninitialized
 import scala.util.boundary
 import scala.util.boundary.break
 import scala.util.control.NonFatal
@@ -13,11 +12,14 @@ final class Scanner(val source: String, val path: Option[Path] = None):
 
   def this(path: Path) = this(Files.readString(path), Some(path))
 
+  /** 指针零位 */
+  private def initialPosition = Position(1, 1, 0, path)
+
   /** 开始位置指针 */
-  private var start: Position = uninitialized
+  private var start: Position = initialPosition
 
   /** 当前位置指针 */
-  private var current: Position = uninitialized
+  private var current: Position = initialPosition
 
   /** 收集分词结果 */
   private val tokens = IndexedSeq.newBuilder[Token]
@@ -29,8 +31,8 @@ final class Scanner(val source: String, val path: Option[Path] = None):
   /** 分词 */
   def tokenize(): Either[ScannerError, IndexedSeq[Token]] =
     // 指针归零
-    start = Position(1, 1, 0, path)
-    current = start
+    start = initialPosition
+    current = initialPosition
     // 清空上次的收集结果
     tokens.clear()
 

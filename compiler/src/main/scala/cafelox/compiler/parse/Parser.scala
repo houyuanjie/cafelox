@@ -5,7 +5,6 @@ import cafelox.compiler.scan.Token
 import cafelox.compiler.scan.TokenType
 
 import scala.annotation.tailrec
-import scala.compiletime.uninitialized
 import scala.util.boundary
 import scala.util.boundary.break
 import scala.util.control.NonFatal
@@ -15,7 +14,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
   import Parser.*
 
   /** 指针 */
-  private var current: Int = uninitialized
+  private var current: Int = 0
 
   /** 收集解析错误 */
   private val errors = Seq.newBuilder[ParserError]
