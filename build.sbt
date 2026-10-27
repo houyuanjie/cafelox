@@ -13,9 +13,11 @@ scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
     "-unchecked",
+    "-Werror",
     "-Wsafe-init",
     "-Wunused:all",
     "-Wvalue-discard",
+    "-Wnonunit-statement",
     "-Yexplicit-nulls",
     // format: on
   )
