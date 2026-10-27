@@ -1,4 +1,4 @@
-scalaVersion := "3.9.0"
+scalaVersion := "3.10.0"
 organization := "cafelox"
 
 libraryDependencies += Dependencies.munit % Test
