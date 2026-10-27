@@ -35,7 +35,7 @@ class ScannerTest extends FunSuite:
     val lexemes = assertSuccess(source).map(_.lexeme)
     assertEquals(lexemes, expectedLexemes)
 
-  private inline def pos(line: Int, col: Int, offset: Int): Position =
+  private def pos(line: Int, col: Int, offset: Int): Position =
     Position(line, col, offset)
 
   // ==============================

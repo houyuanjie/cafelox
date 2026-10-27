@@ -104,7 +104,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
     val startOfBody = consume(TokenType.LeftBrace, "Expect '{' before class body.")
     val methods     = Seq.newBuilder[Node.Stmt.Function]
     while !check(TokenType.RightBrace) && !isAtEnd do methods += functionDeclaration("method")
-    consume(TokenType.RightBrace, "Expect '}' after class body.")
+    consume(TokenType.RightBrace, "Expect '}' after class body."): Unit
 
     Node.Stmt.Class(
       name,
@@ -123,7 +123,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
     val name = consume(TokenType.Identifier, s"Expect $kind name.")
 
-    consume(TokenType.LeftParen, s"Expect '(' after $kind name.")
+    consume(TokenType.LeftParen, s"Expect '(' after $kind name."): Unit
     val parameters      = Seq.newBuilder[Token]
     var parametersCount = 0
     boundary:
@@ -138,9 +138,9 @@ final class Parser(val tokens: IndexedSeq[Token]):
     if previous().tokenType == TokenType.Comma then error("Don't trail a comma.")
 
     // 消耗')'
-    consume(TokenType.RightParen, "Expect ')' after parameters.")
+    consume(TokenType.RightParen, "Expect ')' after parameters."): Unit
 
-    consume(TokenType.LeftBrace, s"Expect '{' before $kind body.")
+    consume(TokenType.LeftBrace, s"Expect '{' before $kind body."): Unit
     val body = blockStatement()
 
     Node.Stmt.Function(
@@ -159,7 +159,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
     var initializer: Option[Node.Expr] = None
     if matchType(TokenType.Equal) then initializer = Some(expression())
 
-    consume(TokenType.Semicolon, "Expect ';' after variable declaration.")
+    consume(TokenType.Semicolon, "Expect ';' after variable declaration."): Unit
 
     Node.Stmt.Variable(
       name,
@@ -184,7 +184,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
   private def forStatement(): Node.Stmt.Block =
     val startOfFor = previous() // 'for'
 
-    consume(TokenType.LeftParen, "Expect '(' after 'for'.")
+    consume(TokenType.LeftParen, "Expect '(' after 'for'."): Unit
 
     val startOfInitializer = peek()
     val initializer        =
@@ -196,14 +196,14 @@ final class Parser(val tokens: IndexedSeq[Token]):
     val condition        =
       if check(TokenType.Semicolon) then None
       else Some(expression())
-    consume(TokenType.Semicolon, "Expect ';' after loop condition.")
+    consume(TokenType.Semicolon, "Expect ';' after loop condition."): Unit
 
     val startOfIncrement = peek()
     val increment        =
       if check(TokenType.RightParen) then None
       else Some(expression())
 
-    consume(TokenType.RightParen, "Expect ')' after for clauses.")
+    consume(TokenType.RightParen, "Expect ')' after for clauses."): Unit
 
     var body = statement()
 
@@ -244,9 +244,9 @@ final class Parser(val tokens: IndexedSeq[Token]):
   private def ifStatement(): Node.Stmt.If =
     val startOfIf = previous() // 'if'
 
-    consume(TokenType.LeftParen, "Expect '(' after 'if'.")
+    consume(TokenType.LeftParen, "Expect '(' after 'if'."): Unit
     val condition = expression()
-    consume(TokenType.RightParen, "Expect ')' after if condition.")
+    consume(TokenType.RightParen, "Expect ')' after if condition."): Unit
 
     val thenBranch = statement()
 
@@ -265,7 +265,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
     val startOfPrint = previous() // 'print'
 
     val value = expression()
-    consume(TokenType.Semicolon, "Expect ';' after value.")
+    consume(TokenType.Semicolon, "Expect ';' after value."): Unit
 
     Node.Stmt.Print(
       value,
@@ -277,7 +277,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
     val startOfPuts = previous() // 'puts'
 
     val value = expression()
-    consume(TokenType.Semicolon, "Expect ';' after value.")
+    consume(TokenType.Semicolon, "Expect ';' after value."): Unit
 
     Node.Stmt.Puts(
       value,
@@ -290,7 +290,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
     var value: Option[Node.Expr] = None
     if !check(TokenType.Semicolon) then value = Some(expression())
-    consume(TokenType.Semicolon, "Expect ';' after return value.")
+    consume(TokenType.Semicolon, "Expect ';' after return value."): Unit
 
     Node.Stmt.Return(
       startOfReturn,
@@ -302,9 +302,9 @@ final class Parser(val tokens: IndexedSeq[Token]):
   private def whileStatement(): Node.Stmt.While =
     val startOfWhile = previous() // 'while'
 
-    consume(TokenType.LeftParen, "Expect '(' after 'while'.")
+    consume(TokenType.LeftParen, "Expect '(' after 'while'."): Unit
     val condition = expression()
-    consume(TokenType.RightParen, "Expect ')' after condition.")
+    consume(TokenType.RightParen, "Expect ')' after condition."): Unit
 
     val body = statement()
 
@@ -321,7 +321,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
     val stmts = Seq.newBuilder[Node.Stmt]
     while !check(TokenType.RightBrace) && !isAtEnd do declaration().foreach(stmts += _)
 
-    consume(TokenType.RightBrace, "Expect '}' after block.")
+    consume(TokenType.RightBrace, "Expect '}' after block."): Unit
 
     Node.Stmt.Block(
       Node.Statements(
@@ -336,7 +336,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
     val startOfExprStmt = peek()
 
     val expr = expression()
-    consume(TokenType.Semicolon, "Expect ';' after expression.")
+    consume(TokenType.Semicolon, "Expect ';' after expression."): Unit
 
     Node.Stmt.Expression(
       expr,
@@ -445,7 +445,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
     val baseExpr = startOfPrimary.tokenType match
       // 数值字面量
       case TokenType.NumberLiteral(value) =>
-        advance()
+        advance(): Unit
 
         Node.Expr.NumberLiteral(
           value,
@@ -454,7 +454,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
       // 字符串字面量
       case TokenType.StringLiteral(value) =>
-        advance()
+        advance(): Unit
 
         Node.Expr.StringLiteral(
           value,
@@ -463,7 +463,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
       // 'true'
       case TokenType.True =>
-        advance()
+        advance(): Unit
 
         Node.Expr.TrueLiteral(
           Location(startOfPrimary.pos, peek().pos)
@@ -471,7 +471,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
       // 'false'
       case TokenType.False =>
-        advance()
+        advance(): Unit
 
         Node.Expr.FalseLiteral(
           Location(startOfPrimary.pos, peek().pos)
@@ -479,7 +479,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
       // 'nil'
       case TokenType.Nil =>
-        advance()
+        advance(): Unit
 
         Node.Expr.NilLiteral(
           Location(startOfPrimary.pos, peek().pos)
@@ -506,7 +506,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
       // 'super'
       case TokenType.Super =>
         val `super` = advance()
-        consume(TokenType.Dot, "Expect '.' after 'super'.")
+        consume(TokenType.Dot, "Expect '.' after 'super'."): Unit
         val methodName = consume(TokenType.Identifier, "Expect superclass method name.")
 
         Node.Expr.Super(
@@ -517,9 +517,9 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
       // '('
       case TokenType.LeftParen =>
-        advance() // '('
+        advance(): Unit // '('
         val expr = expression()
-        consume(TokenType.RightParen, "Expect ')' after expression.")
+        consume(TokenType.RightParen, "Expect ')' after expression."): Unit
 
         Node.Expr.Grouping(
           expr,
@@ -574,7 +574,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
   /** 解析属性访问 */
   @tailrec
   private def parseGetExpression(obj: Node.Expr): Node.Expr =
-    advance() // '.'
+    advance(): Unit // '.'
 
     val name = consume(TokenType.Identifier, "Expect property name after '.'.")
 
@@ -635,14 +635,14 @@ final class Parser(val tokens: IndexedSeq[Token]):
   /** 消费一个`tokenTypes`中的Token，当前Token不匹配时返回false */
   private def matchType(tokenTypes: TokenType*) =
     if tokenTypes.exists(check) then
-      advance()
+      advance(): Unit
       true
     else false
 
   /** 错误恢复 */
   private def synchronize(): Unit =
     // 跳过出错Token
-    advance()
+    advance(): Unit
     // 尝试向后跳
     boundary:
       while !isAtEnd do

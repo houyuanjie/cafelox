@@ -92,7 +92,7 @@ final class Scanner(val source: String, val path: Option[Path] = None):
     while peek().exists(isDigit) do advance(): Unit
     // 小数部分，可能存在
     if peek2().exists((d, f) => d == '.' && isDigit(f)) then
-      advance() // 跳过'.'
+      advance(): Unit // 跳过'.'
       while peek().exists(isDigit) do advance(): Unit
 
     val lexeme = currentLexeme()
@@ -115,7 +115,7 @@ final class Scanner(val source: String, val path: Option[Path] = None):
   // ==============================
 
   /** 判断当前是否已经到达末尾 */
-  private inline def isAtEnd: Boolean =
+  private def isAtEnd: Boolean =
     current.offset >= source.length
 
   /** 查看当前字符，不消费 */
@@ -145,7 +145,7 @@ final class Scanner(val source: String, val path: Option[Path] = None):
   private def matchChar(c: Char): Boolean =
     peek() match
       case Some(`c`) =>
-        advance()
+        advance(): Unit
         true
       case _ => false
 
@@ -156,19 +156,19 @@ final class Scanner(val source: String, val path: Option[Path] = None):
   // 位置处理
 
   /** 标记当前指针的位置是开始位置 */
-  private inline def markStart(): Unit =
+  private def markStart(): Unit =
     start = current
 
   /** 返回开始位置到当前位置之间的文本内容，包含开始位置的字符，不包含当前位置的字符 */
-  private inline def currentLexeme(): String =
+  private def currentLexeme(): String =
     source.substring(start.offset, current.offset)
 
   /** 使用当前位置的内容构造一个`tt`类型的Token */
-  private inline def addToken(tt: TokenType): Unit =
+  private def addToken(tt: TokenType): Unit =
     tokens += Token(tt, currentLexeme(), start)
 
   /** 在当前位置构造并抛出一个`ScannerError` */
-  private inline def error(msg: String): Nothing =
+  private def error(msg: String): Nothing =
     throw ScannerError(msg, current)
 
   // 跳过
@@ -179,13 +179,13 @@ final class Scanner(val source: String, val path: Option[Path] = None):
 
   /** 跳过注释：一行注释`// ...`、多行注释`/* ... */` */
   private def skipComment(): Unit =
-    inline def doAdvanceUntilNewline(): Unit = boundary:
+    def doAdvanceUntilNewline(): Unit = boundary:
       while true do
         peek() match
           case None | Some('\n') => break()
           case _                 => advance(): Unit
 
-    inline def doAdvanceUntilCloseMultilineComment(): Unit = boundary:
+    def doAdvanceUntilCloseMultilineComment(): Unit = boundary:
       while true do
         peek2() match
           case None | Some(('*', '/')) => break()
@@ -193,13 +193,13 @@ final class Scanner(val source: String, val path: Option[Path] = None):
 
     peek2() match
       case Some(('/', '/')) =>
-        advance() // 跳过'/'
-        advance() // 跳过'/'
+        advance(): Unit // 跳过'/'
+        advance(): Unit // 跳过'/'
         doAdvanceUntilNewline()
         // 当前'\n'，未消费
       case Some(('/', '*')) =>
-        advance() // 跳过 '/'
-        advance() // 跳过'*'
+        advance(): Unit // 跳过 '/'
+        advance(): Unit // 跳过'*'
         doAdvanceUntilCloseMultilineComment()
         // 当前"*/"，需要消费掉
         if !(matchChar('*') && matchChar('/')) then error("Unterminated block comment.")
@@ -217,27 +217,27 @@ object Scanner:
   // 判断工具
 
   /** 判断`c`是否一个数字 */
-  private inline def isDigit(c: Char): Boolean =
+  private def isDigit(c: Char): Boolean =
     c.isDigit
 
   /** 判断`c`是否一个字母 */
-  private inline def isAlpha(c: Char): Boolean =
+  private def isAlpha(c: Char): Boolean =
     c.isLetter
 
   /** 判断`c`是否一个字母或数字 */
-  private inline def isAlphaNum(c: Char): Boolean =
+  private def isAlphaNum(c: Char): Boolean =
     c.isLetterOrDigit
 
   /** 判断`c`是否一个合法的标识符开头：字母或下划线 */
-  private inline def isIdentHead(c: Char): Boolean =
+  private def isIdentHead(c: Char): Boolean =
     isAlpha(c) || c == '_'
 
   /** 判断`c`是否一个合法的标识符后续：字母、数字或下划线 */
-  private inline def isIdentTail(c: Char): Boolean =
+  private def isIdentTail(c: Char): Boolean =
     isAlphaNum(c) || c == '_'
 
   /** 判断`c`是否一个空白字符，例如：空格`' '`、制表`\t`、回车`\r`、换行`\n` */
-  private inline def isWhitespace(c: Char): Boolean =
+  private def isWhitespace(c: Char): Boolean =
     c.isWhitespace
 
   /** Lox关键字表 */
