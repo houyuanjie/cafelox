@@ -2,8 +2,8 @@ package cafelox.compiler.phase2_parse
 
 import cafelox.compiler.phase1_scan.Token
 
-sealed trait Node:
-  val loc: Location
+sealed trait Node[A]:
+  val attachment: A
 
 /** 抽象语法树（AST）
   *
@@ -12,92 +12,93 @@ sealed trait Node:
   */
 object Node:
   /** 顶级节点 */
-  final case class Program(statements: Statements[Stmt], loc: Location) extends Node
+  final case class Program[A](statements: Statements[A, Stmt[A]], attachment: A) extends Node[A]
 
   /** 语句容器 */
-  final case class Statements[+T <: Stmt](seq: Seq[T], loc: Location) extends Node
+  final case class Statements[A, +T <: Stmt[A]](seq: Seq[T], attachment: A) extends Node[A]
 
   /** 表达式容器 */
-  final case class Expressions[+T <: Expr](seq: Seq[T], loc: Location) extends Node
+  final case class Expressions[A, +T <: Expr[A]](seq: Seq[T], attachment: A) extends Node[A]
 
   /** 语句 */
-  enum Stmt extends Node:
+  enum Stmt[A] extends Node[A]:
     /** 块 */
-    case Block(statements: Statements[Stmt], loc: Location)
+    case Block[A](statements: Statements[A, Stmt[A]], attachment: A) extends Stmt[A]
 
     /** 类 */
-    case Class(name: Token, superClass: Option[Expr.Variable], methods: Statements[Function], loc: Location)
+    case Class[A](name: Token, superClass: Option[Expr.Variable[A]], methods: Statements[A, Function[A]], attachment: A)
+        extends Stmt[A]
 
     /** 表达式语句 */
-    case Expression(expr: Expr, loc: Location)
+    case Expression[A](expr: Expr[A], attachment: A) extends Stmt[A]
 
     /** 函数 */
-    case Function(name: Token, params: Seq[Token], body: Block, loc: Location)
+    case Function[A](name: Token, params: Seq[Token], body: Block[A], attachment: A) extends Stmt[A]
 
     /** 分支语句 */
-    case If(condition: Expr, thenBranch: Stmt, elseBranch: Option[Stmt], loc: Location)
+    case If[A](condition: Expr[A], thenBranch: Stmt[A], elseBranch: Option[Stmt[A]], attachment: A) extends Stmt[A]
 
     /** print语句 */
-    case Print(expression: Expr, loc: Location)
+    case Print[A](expression: Expr[A], attachment: A) extends Stmt[A]
 
     /** puts语句 */
-    case Puts(expression: Expr, loc: Location)
+    case Puts[A](expression: Expr[A], attachment: A) extends Stmt[A]
 
     /** 返回语句 */
-    case Return(keyword: Token, value: Option[Expr], loc: Location)
+    case Return[A](keyword: Token, value: Option[Expr[A]], attachment: A) extends Stmt[A]
 
     /** 变量声明 */
-    case Variable(name: Token, initializer: Option[Expr], loc: Location)
+    case Variable[A](name: Token, initializer: Option[Expr[A]], attachment: A) extends Stmt[A]
 
     /** 循环语句 */
-    case While(condition: Expr, body: Stmt, loc: Location)
+    case While[A](condition: Expr[A], body: Stmt[A], attachment: A) extends Stmt[A]
 
   /** 表达式 */
-  enum Expr extends Node:
+  enum Expr[A] extends Node[A]:
     /** 赋值 */
-    case Assign(name: Token, value: Expr, loc: Location)
+    case Assign[A](name: Token, value: Expr[A], attachment: A) extends Expr[A]
 
     /** 二元运算符 */
-    case Binary(left: Expr, operator: Token, right: Expr, loc: Location)
+    case Binary[A](left: Expr[A], operator: Token, right: Expr[A], attachment: A) extends Expr[A]
 
     /** 调用 */
-    case Call(callee: Expr, paren: Token, arguments: Expressions[Expr], loc: Location)
+    case Call[A](callee: Expr[A], paren: Token, arguments: Expressions[A, Expr[A]], attachment: A) extends Expr[A]
 
     /** 访问 */
-    case Get(obj: Expr, name: Token, loc: Location)
+    case Get[A](obj: Expr[A], name: Token, attachment: A) extends Expr[A]
 
     /** 分组 */
-    case Grouping(expression: Expr, loc: Location)
+    case Grouping[A](expression: Expr[A], attachment: A) extends Expr[A]
 
     /** 布尔真值字面量 */
-    case TrueLiteral(loc: Location)
+    case TrueLiteral[A](attachment: A) extends Expr[A]
 
     /** 布尔假值字面量 */
-    case FalseLiteral(loc: Location)
+    case FalseLiteral[A](attachment: A) extends Expr[A]
 
     /** 空值字面量 */
-    case NilLiteral(loc: Location)
+    case NilLiteral[A](attachment: A) extends Expr[A]
 
     /** 数字字面量 */
-    case NumberLiteral(value: Double, loc: Location)
+    case NumberLiteral[A](value: Double, attachment: A) extends Expr[A]
 
     /** 字符串字面量 */
-    case StringLiteral(value: String, loc: Location)
+    case StringLiteral[A](value: String, attachment: A) extends Expr[A]
 
     /** 逻辑运算符 */
-    case Logical(left: Expr, operator: Token, right: Expr, loc: Location)
+    case Logical[A](left: Expr[A], operator: Token, right: Expr[A], attachment: A) extends Expr[A]
 
     /** 设值 */
-    case Set(obj: Expr, name: Token, value: Expr, loc: Location)
+    case Set[A](obj: Expr[A], name: Token, value: Expr[A], attachment: A) extends Expr[A]
 
     /** super关键字 */
-    case Super(keyword: Token, method: Token, loc: Location)
+    case Super[A](keyword: Token, method: Token, attachment: A) extends Expr[A]
 
     /** this关键字 */
-    case This(keyword: Token, loc: Location)
+    case This[A](keyword: Token, attachment: A) extends Expr[A]
 
     /** 一元运算符 */
-    case Unary(operator: Token, right: Expr, loc: Location)
+    case Unary[A](operator: Token, right: Expr[A], attachment: A) extends Expr[A]
 
     /** 变量 */
-    case Variable(name: Token, loc: Location)
+    case Variable[A](name: Token, attachment: A) extends Expr[A]

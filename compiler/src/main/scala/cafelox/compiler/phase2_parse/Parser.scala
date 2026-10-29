@@ -20,13 +20,13 @@ final class Parser(val tokens: IndexedSeq[Token]):
   private val errors = Seq.newBuilder[ParserError]
 
   /** 收集顶级语句 */
-  private val statements = Seq.newBuilder[Node.Stmt]
+  private val statements = Seq.newBuilder[Node.Stmt[ParsingPhase]]
 
   // ==============================
   //           顶层
   // ==============================
 
-  def parse(): Either[Seq[ParserError], Node.Program] =
+  def parse(): Either[Seq[ParserError], Node.Program[ParsingPhase]] =
     // 指针归零
     current = 0
     // 清空上次的错误
@@ -55,8 +55,8 @@ final class Parser(val tokens: IndexedSeq[Token]):
       // 包装解析结果
       val (firstToken, eof) = (tokens.head, tokens.last)
       val fullTextLoc       = Location(firstToken.pos, eof.pos)
-      val statementsNode    = Node.Statements(statements.result(), fullTextLoc)
-      val programNode       = Node.Program(statementsNode, fullTextLoc)
+      val statementsNode    = Node.Statements(statements.result(), ParsingPhase(fullTextLoc))
+      val programNode       = Node.Program(statementsNode, ParsingPhase(fullTextLoc))
       Right(programNode)
     catch
       case NonFatal(e) =>
@@ -78,7 +78,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
   // 声明
 
   /** 解析声明结构：类、函数、变量；下层：语句 */
-  private def declaration(): Option[Node.Stmt] =
+  private def declaration(): Option[Node.Stmt[ParsingPhase]] =
     try
       if matchType(TokenType.Class) then Some(classDeclaration())
       else if matchType(TokenType.Fun) then Some(functionDeclaration("function"))
@@ -91,18 +91,18 @@ final class Parser(val tokens: IndexedSeq[Token]):
         None
 
   /** 解析类声明 */
-  private def classDeclaration(): Node.Stmt.Class =
+  private def classDeclaration(): Node.Stmt.Class[ParsingPhase] =
     val startOfClass = previous() // 'class'
 
     val name = consume(TokenType.Identifier, "Expect class name.")
 
-    var superClass: Option[Node.Expr.Variable] = None
+    var superClass: Option[Node.Expr.Variable[ParsingPhase]] = None
     if matchType(TokenType.Less) then
       val superClassName = consume(TokenType.Identifier, "Expect superclass name.")
-      superClass = Some(Node.Expr.Variable(superClassName, Location(superClassName.pos, peek().pos)))
+      superClass = Some(Node.Expr.Variable(superClassName, ParsingPhase(Location(superClassName.pos, peek().pos))))
 
     val startOfBody = consume(TokenType.LeftBrace, "Expect '{' before class body.")
-    val methods     = Seq.newBuilder[Node.Stmt.Function]
+    val methods     = Seq.newBuilder[Node.Stmt.Function[ParsingPhase]]
     while !check(TokenType.RightBrace) && !isAtEnd do methods += functionDeclaration("method")
     consume(TokenType.RightBrace, "Expect '}' after class body."): Unit
 
@@ -111,13 +111,13 @@ final class Parser(val tokens: IndexedSeq[Token]):
       superClass,
       Node.Statements(
         methods.result(),
-        Location(startOfBody.pos, peek().pos)
+        ParsingPhase(Location(startOfBody.pos, peek().pos))
       ),
-      Location(startOfClass.pos, peek().pos)
+      ParsingPhase(Location(startOfClass.pos, peek().pos))
     )
 
   /** 解析函数或方法声明 */
-  private def functionDeclaration(kind: "function" | "method"): Node.Stmt.Function =
+  private def functionDeclaration(kind: "function" | "method"): Node.Stmt.Function[ParsingPhase] =
     // function从'fun'开始，method从方法名开始
     val startOfFun = if kind == "function" then previous() else peek()
 
@@ -147,16 +147,16 @@ final class Parser(val tokens: IndexedSeq[Token]):
       name,
       parameters.result(),
       body,
-      Location(startOfFun.pos, peek().pos)
+      ParsingPhase(Location(startOfFun.pos, peek().pos))
     )
 
   /** 解析变量声明 */
-  private def varDeclaration(): Node.Stmt.Variable =
+  private def varDeclaration(): Node.Stmt.Variable[ParsingPhase] =
     val startOfVar = previous() // 'var'
 
     val name = consume(TokenType.Identifier, "Expect variable name.")
 
-    var initializer: Option[Node.Expr] = None
+    var initializer: Option[Node.Expr[ParsingPhase]] = None
     if matchType(TokenType.Equal) then initializer = Some(expression())
 
     consume(TokenType.Semicolon, "Expect ';' after variable declaration."): Unit
@@ -164,13 +164,13 @@ final class Parser(val tokens: IndexedSeq[Token]):
     Node.Stmt.Variable(
       name,
       initializer,
-      Location(startOfVar.pos, peek().pos)
+      ParsingPhase(Location(startOfVar.pos, peek().pos))
     )
 
   // 语句
 
   /** 解析语句结构：for、if、print、puts、return、while、块、表达式 */
-  private def statement(): Node.Stmt =
+  private def statement(): Node.Stmt[ParsingPhase] =
     if matchType(TokenType.For) then forStatement()
     else if matchType(TokenType.If) then ifStatement()
     else if matchType(TokenType.Print) then printStatement()
@@ -181,7 +181,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
     else expressionStatement()
 
   /** 解析for循环结构 */
-  private def forStatement(): Node.Stmt.Block =
+  private def forStatement(): Node.Stmt.Block[ParsingPhase] =
     val startOfFor = previous() // 'for'
 
     consume(TokenType.LeftParen, "Expect '(' after 'for'."): Unit
@@ -215,33 +215,33 @@ final class Parser(val tokens: IndexedSeq[Token]):
         Node.Statements(
           Seq(
             body,
-            Node.Stmt.Expression(increment.get, increment.get.loc)
+            Node.Stmt.Expression(increment.get, increment.get.attachment)
           ),
-          Location(startOfIncrement.pos, peek().pos)
+          ParsingPhase(Location(startOfIncrement.pos, peek().pos))
         ),
-        Location(startOfIncrement.pos, peek().pos)
+        ParsingPhase(Location(startOfIncrement.pos, peek().pos))
       )
 
     // 使用while循环重写，若没有条件表达式，则使用true作为循环条件
     body = Node.Stmt.While(
       condition.getOrElse(
-        Node.Expr.TrueLiteral(Location(startOfCondition.pos, startOfCondition.pos))
+        Node.Expr.TrueLiteral(ParsingPhase(Location(startOfCondition.pos, startOfCondition.pos)))
       ),
       body,
-      Location(startOfCondition.pos, peek().pos)
+      ParsingPhase(Location(startOfCondition.pos, peek().pos))
     )
 
     // 如果存在初始化语句，则与while循环打包成一个块
     Node.Stmt.Block(
       Node.Statements(
         initializer.fold(Seq(body))(Seq(_, body)),
-        Location(startOfInitializer.pos, peek().pos)
+        ParsingPhase(Location(startOfInitializer.pos, peek().pos))
       ),
-      Location(startOfFor.pos, peek().pos)
+      ParsingPhase(Location(startOfFor.pos, peek().pos))
     )
 
   /** 解析if分支语句结构 */
-  private def ifStatement(): Node.Stmt.If =
+  private def ifStatement(): Node.Stmt.If[ParsingPhase] =
     val startOfIf = previous() // 'if'
 
     consume(TokenType.LeftParen, "Expect '(' after 'if'."): Unit
@@ -250,18 +250,18 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
     val thenBranch = statement()
 
-    var elseBranch: Option[Node.Stmt] = None
+    var elseBranch: Option[Node.Stmt[ParsingPhase]] = None
     if matchType(TokenType.Else) then elseBranch = Some(statement())
 
     Node.Stmt.If(
       condition,
       thenBranch,
       elseBranch,
-      Location(startOfIf.pos, peek().pos)
+      ParsingPhase(Location(startOfIf.pos, peek().pos))
     )
 
   /** 解析print打印语句结构 */
-  private def printStatement(): Node.Stmt.Print =
+  private def printStatement(): Node.Stmt.Print[ParsingPhase] =
     val startOfPrint = previous() // 'print'
 
     val value = expression()
@@ -269,11 +269,11 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
     Node.Stmt.Print(
       value,
-      Location(startOfPrint.pos, peek().pos)
+      ParsingPhase(Location(startOfPrint.pos, peek().pos))
     )
 
   /** 解析puts打印换行语句结构 */
-  private def putsStatement(): Node.Stmt.Puts =
+  private def putsStatement(): Node.Stmt.Puts[ParsingPhase] =
     val startOfPuts = previous() // 'puts'
 
     val value = expression()
@@ -281,25 +281,25 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
     Node.Stmt.Puts(
       value,
-      Location(startOfPuts.pos, peek().pos)
+      ParsingPhase(Location(startOfPuts.pos, peek().pos))
     )
 
   /** 解析return返回语句结构 */
-  private def returnStatement(): Node.Stmt.Return =
+  private def returnStatement(): Node.Stmt.Return[ParsingPhase] =
     val startOfReturn = previous() // 'return'
 
-    var value: Option[Node.Expr] = None
+    var value: Option[Node.Expr[ParsingPhase]] = None
     if !check(TokenType.Semicolon) then value = Some(expression())
     consume(TokenType.Semicolon, "Expect ';' after return value."): Unit
 
     Node.Stmt.Return(
       startOfReturn,
       value,
-      Location(startOfReturn.pos, peek().pos)
+      ParsingPhase(Location(startOfReturn.pos, peek().pos))
     )
 
   /** 解析while循环语句结构 */
-  private def whileStatement(): Node.Stmt.While =
+  private def whileStatement(): Node.Stmt.While[ParsingPhase] =
     val startOfWhile = previous() // 'while'
 
     consume(TokenType.LeftParen, "Expect '(' after 'while'."): Unit
@@ -311,14 +311,14 @@ final class Parser(val tokens: IndexedSeq[Token]):
     Node.Stmt.While(
       condition,
       body,
-      Location(startOfWhile.pos, peek().pos)
+      ParsingPhase(Location(startOfWhile.pos, peek().pos))
     )
 
   /** 解析块结构 */
-  private def blockStatement(): Node.Stmt.Block =
+  private def blockStatement(): Node.Stmt.Block[ParsingPhase] =
     val startOfBlock = previous() // '{'
 
-    val stmts = Seq.newBuilder[Node.Stmt]
+    val stmts = Seq.newBuilder[Node.Stmt[ParsingPhase]]
     while !check(TokenType.RightBrace) && !isAtEnd do declaration().foreach(stmts += _)
 
     consume(TokenType.RightBrace, "Expect '}' after block."): Unit
@@ -326,13 +326,13 @@ final class Parser(val tokens: IndexedSeq[Token]):
     Node.Stmt.Block(
       Node.Statements(
         stmts.result(),
-        Location(startOfBlock.pos, peek().pos)
+        ParsingPhase(Location(startOfBlock.pos, peek().pos))
       ),
-      Location(startOfBlock.pos, peek().pos)
+      ParsingPhase(Location(startOfBlock.pos, peek().pos))
     )
 
   /** 解析表达式语句结构 */
-  private def expressionStatement(): Node.Stmt.Expression =
+  private def expressionStatement(): Node.Stmt.Expression[ParsingPhase] =
     val startOfExprStmt = peek()
 
     val expr = expression()
@@ -340,7 +340,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
     Node.Stmt.Expression(
       expr,
-      Location(startOfExprStmt.pos, peek().pos)
+      ParsingPhase(Location(startOfExprStmt.pos, peek().pos))
     )
 
   // ==============================
@@ -349,7 +349,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
   // Pratt解析算法
 
-  private def expression(rightBindingPower: Int = lowestBindingPower): Node.Expr =
+  private def expression(rightBindingPower: Int = lowestBindingPower): Node.Expr[ParsingPhase] =
     // 一个表达式只能由一个前缀的或主要的子表达式开始
     var expr = parsePrefixExpression()
 
@@ -370,7 +370,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
     expr
 
   /** 解析前缀符号（nud - null denotation） */
-  private def parsePrefixExpression(): Node.Expr =
+  private def parsePrefixExpression(): Node.Expr[ParsingPhase] =
     val startOfExpr = peek() // 可能是前缀符号，需要判断
 
     if isPrefixOperator(startOfExpr.tokenType) then
@@ -380,12 +380,12 @@ final class Parser(val tokens: IndexedSeq[Token]):
       Node.Expr.Unary(
         op,
         right,
-        Location(startOfExpr.pos, peek().pos)
+        ParsingPhase(Location(startOfExpr.pos, peek().pos))
       )
     else parsePrimaryExpression()
 
   /** 解析中缀符号（led - left denotation） */
-  private def parseInfixExpression(left: Node.Expr): Node.Expr =
+  private def parseInfixExpression(left: Node.Expr[ParsingPhase]): Node.Expr[ParsingPhase] =
     val op = advance() // 中缀符号
 
     val bp    = infixOperatorBindingPowers(op.tokenType)
@@ -400,7 +400,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
             Node.Expr.Assign(
               name,
               right,
-              Location(left.loc.startIncluded, peek().pos)
+              ParsingPhase(Location(left.attachment.loc.startIncluded, peek().pos))
             )
 
           // 'foo.bar = 123'
@@ -409,7 +409,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
               obj,
               name,
               right,
-              Location(left.loc.startIncluded, peek().pos)
+              ParsingPhase(Location(left.attachment.loc.startIncluded, peek().pos))
             )
 
           // 其它形式
@@ -422,7 +422,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
           left,
           op,
           right,
-          Location(left.loc.startIncluded, peek().pos)
+          ParsingPhase(Location(left.attachment.loc.startIncluded, peek().pos))
         )
 
       // 算术运算
@@ -432,14 +432,14 @@ final class Parser(val tokens: IndexedSeq[Token]):
           left,
           op,
           right,
-          Location(left.loc.startIncluded, peek().pos)
+          ParsingPhase(Location(left.attachment.loc.startIncluded, peek().pos))
         )
 
       case _ =>
         error("Invalid infix expression.")
 
   /** 解析首要表达式 */
-  private def parsePrimaryExpression(): Node.Expr =
+  private def parsePrimaryExpression(): Node.Expr[ParsingPhase] =
     val startOfPrimary = peek() // 首要表达式
 
     val baseExpr = startOfPrimary.tokenType match
@@ -449,7 +449,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
         Node.Expr.NumberLiteral(
           value,
-          Location(startOfPrimary.pos, peek().pos)
+          ParsingPhase(Location(startOfPrimary.pos, peek().pos))
         )
 
       // 字符串字面量
@@ -458,7 +458,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
         Node.Expr.StringLiteral(
           value,
-          Location(startOfPrimary.pos, peek().pos)
+          ParsingPhase(Location(startOfPrimary.pos, peek().pos))
         )
 
       // 'true'
@@ -466,7 +466,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
         advance(): Unit
 
         Node.Expr.TrueLiteral(
-          Location(startOfPrimary.pos, peek().pos)
+          ParsingPhase(Location(startOfPrimary.pos, peek().pos))
         )
 
       // 'false'
@@ -474,7 +474,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
         advance(): Unit
 
         Node.Expr.FalseLiteral(
-          Location(startOfPrimary.pos, peek().pos)
+          ParsingPhase(Location(startOfPrimary.pos, peek().pos))
         )
 
       // 'nil'
@@ -482,7 +482,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
         advance(): Unit
 
         Node.Expr.NilLiteral(
-          Location(startOfPrimary.pos, peek().pos)
+          ParsingPhase(Location(startOfPrimary.pos, peek().pos))
         )
 
       // 标识符
@@ -491,7 +491,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
         Node.Expr.Variable(
           name,
-          Location(name.pos, peek().pos)
+          ParsingPhase(Location(name.pos, peek().pos))
         )
 
       // 'this'
@@ -500,7 +500,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
         Node.Expr.This(
           `this`,
-          Location(`this`.pos, peek().pos)
+          ParsingPhase(Location(`this`.pos, peek().pos))
         )
 
       // 'super'
@@ -512,7 +512,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
         Node.Expr.Super(
           `super`,
           methodName,
-          Location(`super`.pos, peek().pos)
+          ParsingPhase(Location(`super`.pos, peek().pos))
         )
 
       // '('
@@ -523,7 +523,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
         Node.Expr.Grouping(
           expr,
-          Location(startOfPrimary.pos, peek().pos)
+          ParsingPhase(Location(startOfPrimary.pos, peek().pos))
         )
 
       // 其它情况
@@ -536,11 +536,11 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
   /** 解析方法调用 */
   @tailrec
-  private def parseCallExpression(callee: Node.Expr): Node.Expr =
+  private def parseCallExpression(callee: Node.Expr[ParsingPhase]): Node.Expr[ParsingPhase] =
     val leftParen = advance() // '('
 
     // 收集参数列表
-    val args      = Seq.newBuilder[Node.Expr]
+    val args      = Seq.newBuilder[Node.Expr[ParsingPhase]]
     var argsCount = 0
     boundary:
       while !check(TokenType.RightParen) && !isAtEnd do
@@ -562,9 +562,9 @@ final class Parser(val tokens: IndexedSeq[Token]):
         leftParen,
         Node.Expressions(
           args.result(),
-          Location(leftParen.pos, rightParen.pos)
+          ParsingPhase(Location(leftParen.pos, rightParen.pos))
         ),
-        Location(callee.loc.startIncluded, peek().pos)
+        ParsingPhase(Location(callee.attachment.loc.startIncluded, peek().pos))
       )
 
     if check(TokenType.LeftParen) then parseCallExpression(call) // 'foo(1,2,3)(4,5,6)'
@@ -573,7 +573,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
   /** 解析属性访问 */
   @tailrec
-  private def parseGetExpression(obj: Node.Expr): Node.Expr =
+  private def parseGetExpression(obj: Node.Expr[ParsingPhase]): Node.Expr[ParsingPhase] =
     advance(): Unit // '.'
 
     val name = consume(TokenType.Identifier, "Expect property name after '.'.")
@@ -582,7 +582,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
       Node.Expr.Get(
         obj,
         name,
-        Location(obj.loc.startIncluded, peek().pos)
+        ParsingPhase(Location(obj.attachment.loc.startIncluded, peek().pos))
       )
 
     if check(TokenType.LeftParen) then parseCallExpression(get) // 'foo.bar(1,2,3)'
@@ -654,6 +654,8 @@ final class Parser(val tokens: IndexedSeq[Token]):
         advance(): Unit
 
 object Parser:
+  final case class ParsingPhase(loc: Location)
+
   /** 安全的语法结构 */
   private val checkpoints: Seq[TokenType] = Seq(
     TokenType.Class,
