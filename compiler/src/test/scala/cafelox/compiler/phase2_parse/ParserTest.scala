@@ -1,6 +1,6 @@
-package cafelox.compiler.parse
+package cafelox.compiler.phase2_parse
 
-import cafelox.compiler.scan.Scanner
+import cafelox.compiler.phase1_scan.Scanner
 import munit.FunSuite
 
 class ParserTest extends FunSuite:

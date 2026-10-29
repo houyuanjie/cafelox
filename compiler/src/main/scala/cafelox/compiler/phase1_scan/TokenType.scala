@@ -1,4 +1,4 @@
-package cafelox.compiler.scan
+package cafelox.compiler.phase1_scan
 
 enum TokenType:
   // 单字符的Token

@@ -1,4 +1,4 @@
-package cafelox.compiler.scan
+package cafelox.compiler.phase1_scan
 
 import java.nio.file.Files
 import java.nio.file.Path

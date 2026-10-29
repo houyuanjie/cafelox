@@ -1,6 +1,6 @@
-package cafelox.compiler.parse
+package cafelox.compiler.phase2_parse
 
-import cafelox.compiler.scan.Token
+import cafelox.compiler.phase1_scan.Token
 
 sealed trait Node:
   val loc: Location

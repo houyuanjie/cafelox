@@ -1,8 +1,8 @@
-package cafelox.compiler.parse
+package cafelox.compiler.phase2_parse
 
-import cafelox.compiler.scan.Position
-import cafelox.compiler.scan.Token
-import cafelox.compiler.scan.TokenType
+import cafelox.compiler.phase1_scan.Position
+import cafelox.compiler.phase1_scan.Token
+import cafelox.compiler.phase1_scan.TokenType
 
 import scala.annotation.tailrec
 import scala.util.boundary

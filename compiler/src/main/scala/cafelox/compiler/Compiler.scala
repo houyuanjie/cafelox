@@ -1,7 +1,7 @@
 package cafelox.compiler
 
-import cafelox.compiler.parse.Parser
-import cafelox.compiler.scan.Scanner
+import cafelox.compiler.phase1_scan.Scanner
+import cafelox.compiler.phase2_parse.Parser
 
 object Compiler:
   def main(args: Array[String]): Unit =
