@@ -2,7 +2,13 @@ package cafelox.compiler.phase2_parse
 
 import cafelox.compiler.phase1_scan.Token
 
+/** 抽象节点
+  *
+  * @tparam A
+  *   不同编译阶段附加在该节点的信息的类型
+  */
 sealed trait Node[A]:
+  /** 阶段附加信息 */
   val attachment: A
 
 /** 抽象语法树（AST）

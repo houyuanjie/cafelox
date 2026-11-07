@@ -9,7 +9,11 @@ import scala.util.boundary
 import scala.util.boundary.break
 import scala.util.control.NonFatal
 
-/** Lox解析器 */
+/** Lox解析器
+  *
+  * @param tokens
+  *   词元序列
+  */
 final class Parser(val tokens: IndexedSeq[Token]):
   import Parser.*
 
@@ -26,6 +30,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
   //           顶层
   // ==============================
 
+  /** 解析 */
   def parse(): Either[Seq[ParserError], Node.Program[ParsingPhase]] =
     // 指针归零
     current = 0
@@ -654,6 +659,11 @@ final class Parser(val tokens: IndexedSeq[Token]):
         advance(): Unit
 
 object Parser:
+  /** 解析阶段附加在AST上的信息
+    *
+    * @param loc
+    *   节点对应源代码文本的位置
+    */
   final case class ParsingPhase(loc: Location)
 
   /** 安全的语法结构 */

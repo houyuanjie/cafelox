@@ -6,10 +6,21 @@ import scala.util.boundary
 import scala.util.boundary.break
 import scala.util.control.NonFatal
 
-/** Lox分词器 */
+/** Lox分词器
+  *
+  * @param source
+  *   源代码的内容
+  * @param path
+  *   源文件的路径
+  */
 final class Scanner(val source: String, val path: Option[Path] = None):
   import Scanner.*
 
+  /** Lox分词器
+    *
+    * @param path
+    *   源文件的路径
+    */
   def this(path: Path) = this(Files.readString(path), Some(path))
 
   /** 指针零位 */

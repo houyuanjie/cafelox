@@ -1,5 +1,6 @@
 package cafelox.compiler.phase1_scan
 
+/** 词元类型 */
 enum TokenType:
   // 单字符的Token
   case Comma
