@@ -1,17 +1,12 @@
 package cafelox.compiler.phase3_analyze
 
-import cafelox.compiler.phase2_parse.Node
-import cafelox.compiler.phase2_parse.Parser
+import cafelox.compiler.common.Node
 
 import scala.collection.mutable
 
 /** Lox语义分析器 */
-final class Analyzer(val program: Node.Program[Parser.ParsingPhase]):
-
+final class Analyzer(val program: Node.Program):
   import Analyzer.*
-
-  /** 符号表 */
-  private val symbolTable = SymbolTable()
 
   /** 作用域栈 (仅包含局部作用域，不包含全局作用域) */
   private val scopeStack: mutable.Stack[Scope] = mutable.Stack.empty
@@ -26,7 +21,7 @@ final class Analyzer(val program: Node.Program[Parser.ParsingPhase]):
   private var currentClass: ClassType = ClassType.None
 
   /** 语义分析 */
-  def analyze(): Either[Seq[AnalyzerError], Result] =
+  def analyze(): Either[Seq[AnalyzerError], Node.Program] =
     ???
 
 object Analyzer:
@@ -35,12 +30,6 @@ object Analyzer:
     case None
     case Global(symbol: Symbol)
     case Local(depth: Int, symbol: Symbol)
-
-  /** AST附加信息 */
-  final case class AnalyzingPhase(resolved: Resolved, parsingPhase: Parser.ParsingPhase)
-
-  /** 语义分析结果 */
-  final case class Result(analyzed: Node.Program[AnalyzingPhase], symbols: SymbolTable)
 
   // 内部状态
 
