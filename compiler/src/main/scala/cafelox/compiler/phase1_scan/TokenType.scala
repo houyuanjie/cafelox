@@ -1,6 +1,6 @@
 package cafelox.compiler.phase1_scan
 
-/** 词元类型 */
+/** Lox词元类型，分为单字符符号、双字符符号、字面量、关键字和文件结束标记五类 */
 enum TokenType:
   // 单字符的Token
   case Comma

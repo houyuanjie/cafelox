@@ -5,8 +5,9 @@ import cafelox.compiler.phase2_parse.Location
 import cafelox.compiler.phase3_analyze.Analyzer.Resolved
 import cafelox.compiler.phase3_analyze.SymbolTable
 
-/** 抽象节点 */
+/** AST节点的基础特质，所有语法树节点均扩展自此特质 */
 sealed trait Node:
+  /** 节点在源代码中的位置范围 */
   val loc: Location
 
 /** 抽象语法树（AST）
@@ -15,13 +16,13 @@ sealed trait Node:
   *   [Appendix II - Crafting Interpreters](https://www.craftinginterpreters.com/appendix-ii.html)
   */
 object Node:
-  /** 顶级节点 */
+  /** 顶级节点，代表一个完整的程序 */
   final case class Program(statements: Statements, loc: Location, symbolTable: SymbolTable = SymbolTable()) extends Node
 
-  /** 语句容器 */
+  /** 语句容器，按顺序保存多条语句 */
   final case class Statements(seq: Seq[Stmt], loc: Location) extends Node
 
-  /** 表达式容器 */
+  /** 表达式容器，按顺序保存多个表达式 */
   final case class Expressions(seq: Seq[Expr], loc: Location) extends Node
 
   /** 语句 */

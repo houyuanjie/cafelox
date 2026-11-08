@@ -18,13 +18,13 @@ import scala.util.control.NonFatal
 final class Parser(val tokens: IndexedSeq[Token]):
   import Parser.*
 
-  /** 指针 */
+  /** 当前解析位置 */
   private var current: Int = 0
 
-  /** 收集解析错误 */
+  /** 已收集的解析错误 */
   private val errors = Seq.newBuilder[ParserError]
 
-  /** 收集顶级语句 */
+  /** 已收集的顶级语句 */
   private val statements = Seq.newBuilder[Node.Stmt]
 
   // ==============================
@@ -87,7 +87,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
   // 声明
 
-  /** 解析声明结构：类、函数、变量；下层：语句 */
+  /** 解析声明（类、函数、变量），下层解析语句 */
   private def declaration(): Option[Node.Stmt] =
     try
       if matchType(TokenType.Class) then Some(classDeclaration())
@@ -364,6 +364,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
   // Pratt解析算法
 
+  /** 解析表达式（使用Pratt算法） */
   private def expression(rightBindingPower: Int = lowestBindingPower): Node.Expr =
     // 一个表达式只能由一个前缀的或主要的子表达式开始
     var expr = parsePrefixExpression()
@@ -384,7 +385,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
 
     expr
 
-  /** 解析前缀符号（nud - null denotation） */
+  /** 解析前缀表达式（一元运算符或首要表达式） */
   private def parsePrefixExpression(): Node.Expr =
     val startOfExpr = peek() // 可能是前缀符号，需要判断
 
@@ -399,7 +400,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
       )
     else parsePrimaryExpression()
 
-  /** 解析中缀符号（led - left denotation） */
+  /** 解析中缀表达式 */
   private def parseInfixExpression(left: Node.Expr): Node.Expr =
     val op = advance() // 中缀符号
 
@@ -549,7 +550,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
     else if check(TokenType.LeftParen) then parseCallExpression(baseExpr)
     else baseExpr
 
-  /** 解析方法调用 */
+  /** 解析函数调用 */
   @tailrec
   private def parseCallExpression(callee: Node.Expr): Node.Expr =
     val leftParen = advance() // '('
@@ -627,16 +628,16 @@ final class Parser(val tokens: IndexedSeq[Token]):
   private def isAtEnd: Boolean =
     peek().tokenType == TokenType.EOF
 
-  /** 报错 */
+  /** 构造并抛出一个解析错误 */
   private def error(msg: String): Nothing =
     throw ParserError(msg, peek())
 
-  /** 推动当前指针移动到下一个Token，返回移动前的Token */
+  /** 将当前位置前移一词元，并返回前移前的词元 */
   private def advance(): Token =
     if !isAtEnd then current += 1
     previous()
 
-  /** 如果当前未到达EOF，则检查当前Token的TokenType是否为`tokenType` */
+  /** 若未到EOF且当前词元类型为`tokenType`则返回`true` */
   private def check(tokenType: TokenType): Boolean =
     !isAtEnd && peek().tokenType == tokenType
 
@@ -652,7 +653,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
       true
     else false
 
-  /** 错误恢复 */
+  /** 发生解析错误后，跳过词元直到可安全恢复的位置 */
   private def synchronize(): Unit =
     // 跳过出错Token
     advance(): Unit
@@ -667,7 +668,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
         advance(): Unit
 
 object Parser:
-  /** 安全的语法结构 */
+  /** 错误恢复时可停顿的语法结构 */
   private val checkpoints: Seq[TokenType] = Seq(
     TokenType.Class,
     TokenType.Fun,

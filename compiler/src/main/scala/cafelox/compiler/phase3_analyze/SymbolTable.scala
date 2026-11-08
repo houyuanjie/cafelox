@@ -1,6 +1,6 @@
 package cafelox.compiler.phase3_analyze
 
-/** 符号表 */
+/** 符号表，用于创建和管理所有作用域 */
 final class SymbolTable:
   /** 保留所有创建过的作用域 */
   private var scopes: List[Scope] = Nil

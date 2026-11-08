@@ -23,16 +23,16 @@ final class Scanner(val source: String, val path: Option[Path] = None):
     */
   def this(path: Path) = this(Files.readString(path), Some(path))
 
-  /** 指针零位 */
+  /** 初始扫描位置（第一行第一列，偏移量为0） */
   private def initialPosition = Position(1, 1, 0, path)
 
-  /** 开始位置指针 */
+  /** 当前词元的起始位置 */
   private var start: Position = initialPosition
 
-  /** 当前位置指针 */
+  /** 当前扫描位置 */
   private var current: Position = initialPosition
 
-  /** 收集分词结果 */
+  /** 已收集的词元列表 */
   private val tokens = IndexedSeq.newBuilder[Token]
 
   // ==============================
@@ -64,6 +64,7 @@ final class Scanner(val source: String, val path: Option[Path] = None):
   //           主体
   // ==============================
 
+  /** 扫描下一个词元 */
   private def scanToken(): Unit =
     advance() match
       case Some(c) =>
@@ -90,6 +91,7 @@ final class Scanner(val source: String, val path: Option[Path] = None):
             else error(s"Unexpected character: '$c'.")
       case None => error("Unexpected none character.")
 
+  /** 扫描关键字或标识符 */
   private def scanKeywordOrIdentifier(): Unit =
     // 首字符已经跳过，从第二个字符开始
     while peek().exists(isIdentTail) do advance(): Unit
@@ -98,6 +100,7 @@ final class Scanner(val source: String, val path: Option[Path] = None):
     val tt     = keywords.getOrElse(lexeme, TokenType.Identifier)
     addToken(tt)
 
+  /** 扫描数字字面量 */
   private def scanNumber(): Unit =
     // 整数部分，最高位字符已经跳过，从次高位字符开始
     while peek().exists(isDigit) do advance(): Unit
@@ -111,6 +114,7 @@ final class Scanner(val source: String, val path: Option[Path] = None):
     val tt     = TokenType.NumberLiteral(value)
     addToken(tt)
 
+  /** 扫描字符串字面量 */
   private def scanString(): Unit =
     // 左侧的'"'已经跳过，从字符串内容开始
     while peek().exists(_ != '"') do advance(): Unit
@@ -125,7 +129,7 @@ final class Scanner(val source: String, val path: Option[Path] = None):
   //           原语
   // ==============================
 
-  /** 判断当前是否已经到达末尾 */
+  /** 判断是否已扫描到源代码末尾 */
   private def isAtEnd: Boolean =
     current.offset >= source.length
 
@@ -140,7 +144,7 @@ final class Scanner(val source: String, val path: Option[Path] = None):
     if nextOffset >= source.length then None
     else Some((source.charAt(current.offset), source.charAt(nextOffset)))
 
-  /** 推动当前指针移动到下一个字符，返回移动前的字符 */
+  /** 将当前指针前移一字符，并返回前移前的字符 */
   private def advance(): Option[Char] =
     if isAtEnd then None
     else
@@ -152,7 +156,7 @@ final class Scanner(val source: String, val path: Option[Path] = None):
       // 返回移动前的字符
       Some(source.charAt(before.offset))
 
-  /** 如果当前字符等于`c`，则移动当前指针到下一个字符并返回`true`，否则不动并返回`false` */
+  /** 若当前字符等于`c`则前移并返回`true`，否则不动并返回`false` */
   private def matchChar(c: Char): Boolean =
     peek() match
       case Some(`c`) =>
@@ -166,19 +170,19 @@ final class Scanner(val source: String, val path: Option[Path] = None):
 
   // 位置处理
 
-  /** 标记当前指针的位置是开始位置 */
+  /** 将当前位置标记为词元起始 */
   private def markStart(): Unit =
     start = current
 
-  /** 返回开始位置到当前位置之间的文本内容，包含开始位置的字符，不包含当前位置的字符 */
+  /** 返回从起始位置到当前位置（不含）的词元文本 */
   private def currentLexeme(): String =
     source.substring(start.offset, current.offset)
 
-  /** 使用当前位置的内容构造一个`tt`类型的Token */
+  /** 以当前词元文本和起始位置构造一个Token并加入结果 */
   private def addToken(tt: TokenType): Unit =
     tokens += Token(tt, currentLexeme(), start)
 
-  /** 在当前位置构造并抛出一个`ScannerError` */
+  /** 在当前位置构造并抛出一个分词错误 */
   private def error(msg: String): Nothing =
     throw ScannerError(msg, current)
 
@@ -190,12 +194,14 @@ final class Scanner(val source: String, val path: Option[Path] = None):
 
   /** 跳过注释：一行注释`// ...`、多行注释`/* ... */` */
   private def skipComment(): Unit =
+    /** 跳到当前行末尾（不消费换行符） */
     def doAdvanceUntilNewline(): Unit = boundary:
       while true do
         peek() match
           case None | Some('\n') => break()
           case _                 => advance(): Unit
 
+    /** 跳到多行注释闭合符之前（不消费闭合符） */
     def doAdvanceUntilCloseMultilineComment(): Unit = boundary:
       while true do
         peek2() match

@@ -2,10 +2,10 @@
 
 ## 介绍
 
-Cafelox是一个在JVM上实现的Lox编程语言方言。
+Cafelox是一个在JVM上实现的Lox编程语言方言
 
 Lox是Robert Nystrom在《Crafting Interpreters》一书中介绍的一门动态类型脚本语言，
-Cafelox基本与Lox相同，在Lox的基础上又吸收了一些来自Java、Ruby等语言的特性。
+Cafelox基本与Lox相同，在Lox的基础上又吸收了一些来自Java、Ruby等语言的特性
 
 - [Crafting Interpreters](https://www.craftinginterpreters.com/)
 - [munificent/craftinginterpreters](https://github.com/munificent/craftinginterpreters)
@@ -32,13 +32,13 @@ Cafelox基本与Lox相同，在Lox的基础上又吸收了一些来自Java、Rub
     - 核心语言优先于嵌入式 DSL
     - 直接风格：避免将monad效果系统作为默认
 
-- 在注释、文档信息中使用直白的简体中文
+- 在注释、文档信息中使用直白、简短的简体中文
 - 在`/** （多行的Scaladoc注释） */`中使用清晰易读的Markdown格式
 - 在代码中的报错信息中使用英文
 - 在帮助类信息中使用英文，例如：Makefile help
 - 中文和English之间不加空格
-- 不使用中文句号
-- 提交消息使用简短的简体中文，范例：
+- 不使用`。`中文句号
+- 提交消息使用直白、简短的简体中文，范例：
 
     ```
     构建：添加'sbt co'、'sbt fix'命令

@@ -20,7 +20,7 @@ final class Analyzer(val program: Node.Program):
   /** 当前所在的类类型 */
   private var currentClass: ClassType = ClassType.None
 
-  /** 语义分析 */
+  /** 执行语义分析（当前为存根，尚未实现） */
   def analyze(): Either[Seq[AnalyzerError], Node.Program] =
     ???
 
