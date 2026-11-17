@@ -2,7 +2,7 @@ package cafelox.compiler.phase3_analyze
 
 import scala.collection.mutable
 
-/** 语法作用域
+/** 语义作用域
   *
   * @param scopeId
   *   创建该作用域时赋予的一个编号，每个作用域应当不同，用来在调试时区分不同的作用域
@@ -42,7 +42,7 @@ final class Scope(
     symbolStates(symbol.name) = SymbolStates(symbol, isDefined = true)
 
 object Scope:
-  /** 语法作用域的类型 */
+  /** 语义作用域的类型 */
   enum Type:
     /** 全局作用域 */
     case Global
