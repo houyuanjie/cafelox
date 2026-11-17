@@ -1,4 +1,4 @@
-scalaVersion := "3.10.1"
+scalaVersion := "3.9.0"
 organization := "cafelox"
 
 libraryDependencies += Dependencies.munit % Test
@@ -13,11 +13,8 @@ scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
     "-unchecked",
+    "-Wall",
     // "-Werror",
-    "-Wsafe-init",
-    "-Wunused:all",
-    "-Wvalue-discard",
-    "-Wnonunit-statement",
     "-Yexplicit-nulls",
     // format: on
   )
