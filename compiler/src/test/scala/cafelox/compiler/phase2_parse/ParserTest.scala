@@ -15,7 +15,7 @@ class ParserTest extends FunSuite:
       case Right(tokens) =>
         val parser = new Parser(tokens)
         parser.parse() match
-          case Left(errs) => fail(s"解析失败: $errs")
+          case Left(errs) => fail(s"解析失败: ${pprint(errs).toString}")
           case Right(_)   => ()
 
   private def assertParseError(source: String, expectedMsgPart: String): Unit =
@@ -27,7 +27,7 @@ class ParserTest extends FunSuite:
           case Left(errs) =>
             assert(
               errs.exists(_.msg.contains(expectedMsgPart)),
-              s"期望错误包含 '$expectedMsgPart'，实际得到: $errs"
+              s"期望错误包含 '$expectedMsgPart'，实际得到: ${pprint(errs).toString}"
             )
           case Right(_) =>
             fail(s"期望报错，但解析成功")
