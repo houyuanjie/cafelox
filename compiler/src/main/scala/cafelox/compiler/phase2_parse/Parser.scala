@@ -70,15 +70,7 @@ final class Parser(val tokens: IndexedSeq[Token]):
       Right(programNode)
     catch
       case NonFatal(e) =>
-        // ParserError原样记录（
-        //     防御性：
-        //         declaration()已捕获语句/声明链上的所有ParserError，
-        //         正常情况下不可达
-        // ），
-        // 其他异常包装为ParserError
-        errors += (e match
-          case pe: ParserError => pe
-          case other           => ParserError("An error occurred during parse.", peek(), other))
+        errors += ParserError("An error occurred during parse.", peek(), e)
         Left(errors.result())
 
   // ==============================
