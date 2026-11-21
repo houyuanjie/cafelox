@@ -17,7 +17,7 @@ sealed trait Node:
   */
 object Node:
   /** 顶级节点，代表一个完整的程序 */
-  final case class Program(statements: Statements, loc: Location, symbolTable: SymbolTable = SymbolTable()) extends Node
+  final case class Program(statements: Statements, loc: Location, symbolTable: Option[SymbolTable] = None) extends Node
 
   /** 语句容器，按顺序保存多条语句 */
   final case class Statements(seq: Seq[Stmt], loc: Location) extends Node

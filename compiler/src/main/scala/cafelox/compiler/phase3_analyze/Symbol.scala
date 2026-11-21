@@ -1,6 +1,6 @@
 package cafelox.compiler.phase3_analyze
 
-import cafelox.compiler.phase1_scan.Token
+import cafelox.compiler.phase2_parse.Location
 
 /** 语义符号
   *
@@ -11,7 +11,7 @@ import cafelox.compiler.phase1_scan.Token
   * @param declaration
   *   声明点
   */
-final case class Symbol(name: String, symbolType: Symbol.Type, declaration: Token)
+final case class Symbol(name: String, symbolType: Symbol.Type, declaration: Location)
 
 object Symbol:
   /** 符号类型 */

@@ -1,20 +1,21 @@
 package cafelox.compiler.phase3_analyze
 
+import cafelox.compiler.phase2_parse.Location
+
 import scala.collection.mutable
 
 /** 语义作用域
+  *
+  * 要创建一个作用域，调用[[SymbolTable#createScope]]
   *
   * @param scopeId
   *   创建该作用域时赋予的一个编号，每个作用域应当不同，用来在调试时区分不同的作用域
   * @param scopeType
   *   作用域的类型
-  * @param parent
-  *   上层的作用域，在语义分析阶段，作用域通过`parent`指针实现向上层查找
   */
 final class Scope(
     val scopeId: Int,
-    val scopeType: Scope.Type,
-    val parent: Option[Scope] = None
+    val scopeType: Scope.Type
 ):
   import Scope.*
 
@@ -34,12 +35,17 @@ final class Scope(
     symbolStates.contains(name)
 
   /** 声明一个符号 */
-  def declare(symbol: Symbol): Unit =
-    symbolStates(symbol.name) = SymbolStates(symbol)
+  def declare(name: String, symbolType: Symbol.Type, declaration: Location): Unit =
+    if contains(name) then throw Error("Already a variable with this name in this scope.", Some(declaration))
+
+    val symbol = Symbol(name, symbolType, declaration)
+    symbolStates(name) = SymbolStates(symbol)
 
   /** 定义一个符号 */
-  def define(symbol: Symbol): Unit =
-    symbolStates(symbol.name) = SymbolStates(symbol, isDefined = true)
+  def define(name: String): Unit =
+    if !contains(name) then throw Error("A variable with this name has never been declared in this scope.")
+
+    symbolStates(name) = symbolStates(name).copy(isDefined = true)
 
 object Scope:
   /** 语义作用域的类型 */
@@ -67,3 +73,15 @@ object Scope:
     *   标记符号是否已经声明，用来阻止递归定义`var a = a;`
     */
   final case class SymbolStates(symbol: Symbol, isDefined: Boolean = false)
+
+  /** 作用域错误
+    *
+    * @param msg
+    *   错误消息
+    * @param loc
+    *   发生错误时处理的位置
+    * @param cause
+    *   由`cause`引发的错误
+    */
+  final case class Error(msg: String, loc: Option[Location] = None, cause: Throwable | Null = null)
+      extends RuntimeException(msg, cause)
