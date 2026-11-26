@@ -58,7 +58,9 @@ final class Analyzer(val program: Node.Program):
 
   /** 开启一个新的作用域
     *
-    * 开启后，仅能通过紧接着的[[currentScope]]调用来访问
+    * 开启后，仅能通过调用[[currentScope]]来访问
+    *
+    * 最后必须调用[[endScope]]来关闭这个作用域，关闭后无法再次访问
     */
   private def beginScope(scopeType: Scope.Type): Unit =
     scopeStack += symbolTable.createScope(scopeType)
