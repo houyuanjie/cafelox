@@ -16,33 +16,8 @@ Cafelox基本与Lox相同，在Lox的基础上又吸收了一些来自Java、Rub
 - `compiler` — 编译器
 - `cli` — 开发者工具
 
-## 开发
+## 更多信息
 
-- `sbt test` — 执行单元测试
-- `sbt co` — 测量单元测试覆盖率
-- `sbt fix` — 对所有模块执行Scalafix和Scalafmt
-
-## 规范
-
-- 使用[Lean Scala](https://odersky.github.io/blog/2024-04-11-post.html)风格：
-
-    - 最小权力原则：能简单解决就不使用更强的手段
-    - 不可变优先，但不教条：优先不可变数据与纯函数，允许良好封装且可描述的副作用
-    - 聚焦Scala 3语法，抛弃Scala 2遗留写法
-    - 核心语言优先于嵌入式 DSL
-    - 直接风格：避免将monad效果系统作为默认
-
-- 在注释、文档信息中使用直白、简短的简体中文
-- 在`/** （多行的Scaladoc注释） */`中使用清晰易读的Markdown格式
-- 在代码中的报错信息中使用英文
-- 在帮助类信息中使用英文，例如：Makefile help
-- 中文和English之间不加空格
-- 不使用`。`中文句号
-- 提交消息使用直白、简短的简体中文，范例：
-
-    ```
-    构建：添加'sbt co'、'sbt fix'命令
-
-    1. 添加Scoverage插件；
-    2. 移除'make lintFmt'
-    ```
+- 开发，请参阅 [DEVELOP.md](DEVELOP.md)
+- 风格指导，请参阅 [STYLE_GUIDE.md](STYLE_GUIDE.md)
+- 编程代理，请参阅 [AGNETS.md](AGENTS.md)
